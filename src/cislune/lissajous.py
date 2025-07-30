@@ -10,7 +10,7 @@
 # *                                                         *
 # ***********************************************************/
 
-from commons import *
+from utils import *
 from params import *
 
 def runLissajous():

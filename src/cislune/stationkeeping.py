@@ -11,10 +11,11 @@
 # ***********************************************************/
 
 from gekko import GEKKO
-from commons import *
-from params import *
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
+from utils import *
+from params import *
 
 mu = 0.012150585609741648
 

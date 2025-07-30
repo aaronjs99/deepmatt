@@ -11,9 +11,10 @@
 # ***********************************************************/
 
 from scipy.special import legendre
-from commons import *
-from params import *
 import matplotlib.pyplot as plt
+
+from utils import *
+from params import *
 
 def haloAccel(t, p, v, *args, **kwargs):
   gamma = kwargs['gamma']

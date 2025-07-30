@@ -9,7 +9,10 @@
 # * Contact: {aaronjs, btlopez}@ucla.edu                    *
 # *                                                         *
 # ***********************************************************/
-from commons import *
+
+from sympy import symbols, Eq, solve
+
+from utils import *
 
 ## ACTUAL VALUES
 # mu_M = 4.9048695900e+12
@@ -30,7 +33,6 @@ p_M = Vector(1-mu, 0.0, 0.0)
 Isp = 1.0
 g_0 = 1.0
 
-from sympy import symbols, Eq, solve
 x = symbols('x')
 eqL1 = Eq(x**5 + ( (mu-3))*x**4 + (3-2*mu)*x**3 + (-mu)*x**2 + ( (2*mu))*x + (-mu), 0)
 eqL2 = Eq(x**5 + (-(mu-3))*x**4 + (3-2*mu)*x**3 + (-mu)*x**2 + (-(2*mu))*x + (-mu), 0)

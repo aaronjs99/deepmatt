@@ -13,7 +13,8 @@
 import numpy as np
 from gekko import GEKKO
 from typing import Union
-from commons import *
+
+from utils import *
 from params import *
 
 mu_EM = mu_M/(mu_E+mu_M)

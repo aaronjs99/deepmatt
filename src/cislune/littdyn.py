@@ -13,7 +13,8 @@
 import numpy as np
 from gekko   import GEKKO
 from typing  import Union
-from commons import *
+
+from utils import *
 from params  import *
 
 def gekko_simulator(p_0: Vector, v_0: Vector = Vector(0.0, 0.0, 0.0), dt = 1, num_steps = 1000):
