@@ -9,6 +9,8 @@
 # *                                                         *
 # ***********************************************************/
 
+import numpy as np
+
 from cislune.utils import *
 
 

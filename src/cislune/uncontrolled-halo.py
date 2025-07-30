@@ -11,6 +11,7 @@
 
 from scipy.special import legendre
 import matplotlib.pyplot as plt
+from gekko import GEKKO
 
 from cislune.utils import *
 

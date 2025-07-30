@@ -10,7 +10,6 @@
 # ***********************************************************/
 
 import yaml
-import numpy as np
 from typing import Tuple
 from sympy import symbols, Eq, solve
 

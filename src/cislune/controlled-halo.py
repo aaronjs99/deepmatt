@@ -9,8 +9,10 @@
 # *                                                         *
 # ***********************************************************/
 
-from scipy.special import legendre
+import numpy as np
 import matplotlib.pyplot as plt
+from gekko import GEKKO
+from scipy.special import legendre
 
 from cislune.utils import *
 

@@ -12,15 +12,23 @@
 import numpy as np
 from gekko import GEKKO
 from typing import Union
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-from cislune.utils import *
+from cislune.utils import load_config, Vector, integrate_simulator
 
-mu_EM = mu_M / (mu_E + mu_M)
-p_E = Vector(-mu_EM * dist_EM, 0.0, 0.0)
-p_M = Vector((1 - mu_EM) * dist_EM, 0.0, 0.0)
+config = load_config("config.yaml")
+
+mu_EM = config["mu_M"] / (config["mu_E"] + config["mu_M"])
+p_E = Vector(-mu_EM * config["dist_EM"], 0.0, 0.0)
+p_M = Vector((1 - mu_EM) * config["dist_EM"], 0.0, 0.0)
 
 
 def acc(t, p: Union[tuple, Vector], *args, **kwargs):
+    mu_E = config["mu_E"]
+    mu_M = config["mu_M"]
+    p_E = config["derived"]["p_E"]
+    p_M = config["derived"]["p_M"]
     if isinstance(p, tuple):
         m = kwargs["m"]
         a_E = mu_E / (
@@ -72,9 +80,9 @@ def gekko_simulator(
     m.Equation(vy.dt() == ay)
     m.Equation(vz.dt() == az)
 
-    m.Equation(ax == a((px, py, pz), m=m)[0])
-    m.Equation(ay == a((px, py, pz), m=m)[1])
-    m.Equation(az == a((px, py, pz), m=m)[2])
+    m.Equation(ax == acc((px, py, pz), m=m)[0])
+    m.Equation(ay == acc((px, py, pz), m=m)[1])
+    m.Equation(az == acc((px, py, pz), m=m)[2])
 
     m.options.IMODE = 4
     m.options.SOLVER = 1
@@ -85,7 +93,7 @@ def gekko_simulator(
 
 
 if __name__ == "__main__":
-    p_0 = Vector(2.00e8 - mu_EM * dist_EM, 6.678e6, 0.00e8)
+    p_0 = Vector(2.00e8 - mu_EM * config["dist_EM"], 6.678e6, 0.00e8)
     v_0 = Vector(0.00e3, 1.000e3, 1.00e3)
     dt = 1.0e1
     num_steps = int(1.0e6)
@@ -94,9 +102,6 @@ if __name__ == "__main__":
         sys=acc, p_0=p_0, v_0=v_0, t_0=0.0, dt=dt, num_steps=num_steps
     )
     # positions = gekko_simulator(p_0, v_0, dt, num_steps)
-
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
 
     x_coords = [position.x for position in positions]
     y_coords = [position.y for position in positions]

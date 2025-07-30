@@ -13,7 +13,9 @@ import numpy as np
 from gekko import GEKKO
 from typing import Union
 
-from cislune.utils import *
+from cislune.utils import load_config, Vector, integrate_simulator
+
+config = load_config()
 
 
 def gekko_simulator(
@@ -70,6 +72,9 @@ def gekko_simulator(
 
 
 def acc(t, p: Union[list, Vector], v: Union[list, Vector], *args, **kwargs):
+    mu = config["desired"]["mu"]
+    p_E = config["desired"]["p_E"]
+    p_M = config["desired"]["p_M"]
     if isinstance(p, list):
         m = kwargs["m"]
         a_X = (
@@ -167,6 +172,10 @@ if __name__ == "__main__":
     dt = 0.001
     num_steps = int(10000)
 
+    mu = config["desired"]["mu"]
+    p_E = config["desired"]["p_E"]
+    p_M = config["desired"]["p_M"]
+    
     positions = integrate_simulator(
         sys=acc, p_0=p_0, v_0=v_0, t_0=0.0, dt=dt, num_steps=num_steps
     )

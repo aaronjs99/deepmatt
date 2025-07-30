@@ -43,18 +43,16 @@ Requires **Python 3.11** (or any Python ≥3.9).
 git clone https://github.com/aaronjs99/cislune
 cd cislune
 
-# (Optional) Create and activate a virtual environment
-python3.11 -m venv venv
-# macOS/Linux
-source venv/bin/activate
-# Windows
-# venv\Scripts\activate
+# Create a Conda environment
+conda create -n cislune python=3.11 -y
+conda activate cislune
 
-# Install the package and its dependencies from pyproject.toml
-pip install .
+# Install in editable mode
+pip install -e .
 
-# (Optional) Install development extras
-pip install ".[dev]"
+# (Optional) Install development dependencies
+pip install -e .[dev]
+```
 
 ## Usage
 
