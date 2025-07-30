@@ -14,7 +14,6 @@ from gekko import GEKKO
 from typing import Union
 
 from cislune.utils import *
-from cislune.params import *
 
 
 def gekko_simulator(

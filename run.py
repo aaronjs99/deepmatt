@@ -21,9 +21,7 @@ def parse_args():
         description="Orbex-A run entry point. Select a mode to execute."
     )
     parser.add_argument(
-        '--mode', '-m',
-        default='adversary',
-        help='Execution mode: adversary, halo, ...'
+        "--mode", "-m", default="adversary", help="Execution mode: adversary, halo, ..."
     )
     return parser.parse_args()
 
@@ -31,7 +29,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.mode == 'adversary':
+    if args.mode == "adversary":
         # Call the adversary routine
         adversary_main()
     else:
@@ -39,5 +37,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

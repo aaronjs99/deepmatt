@@ -14,7 +14,6 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 from cislune.utils import *
-from cislune.params import *
 
 mu = 0.012150585609741648
 

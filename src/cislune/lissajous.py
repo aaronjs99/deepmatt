@@ -9,8 +9,7 @@
 # *                                                         *
 # ***********************************************************/
 
-from utils import *
-from params import *
+from cislune.utils import *
 
 
 def runLissajous():

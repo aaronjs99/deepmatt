@@ -103,7 +103,7 @@ class ChaseProblem:
         final_mask[-1] = 1.0
         integrator = m.Param(value=integrator_mask)
         final = m.Param(value=final_mask)
-        
+
         # Terminal catch constraint at final time
         m.Equation((states["T"][0] - states["C"][0]) * final <= 1e-3)
 
@@ -139,6 +139,7 @@ class ParetoSweep:
         time_steps: Discretization points.
         remote: Use remote solver flag.
     """
+
     def __init__(
         self,
         init_pos: List[Tuple[float, float, float]],

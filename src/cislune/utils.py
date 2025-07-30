@@ -9,9 +9,91 @@
 # *                                                         *
 # ***********************************************************/
 
+import yaml
 import numpy as np
-from gekko import GEKKO
-from typing import Union
+from typing import Tuple
+from sympy import symbols, Eq, solve
+
+
+def load_config(config_path: str) -> dict:
+    """
+    Load configuration from a YAML file.
+
+    Args:
+        config_path: Path to the YAML configuration file.
+
+    Returns:
+        Dictionary containing the configuration parameters.
+    """
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+    config = derive_values(config)
+    return config
+
+
+# add a function to derive values from the config
+def derive_values(config: dict) -> dict:
+    """
+    Derive values based on the configuration parameters.
+
+    Args:
+        config: Dictionary containing the configuration parameters.
+
+    Returns:
+        Dictionary with derived values.
+    """
+    if "mu_M" not in config or "mu_E" not in config:
+        raise ValueError("Configuration must contain 'mu_M' and 'mu_E' parameters.")
+
+    config["derived"] = {}
+    config["derived"]["mu"] = config["mu_M"] / (config["mu_E"] + config["mu_M"])
+    config["derived"]["p_E"] = (-config["derived"]["mu"], 0.0, 0.0)
+    config["derived"]["p_M"] = (1 - config["derived"]["mu"], 0.0, 0.0)
+
+    L1, L2 = get_lagrange_points(config["derived"]["mu"])
+    config["derived"]["L1"] = L1
+    config["derived"]["L2"] = L2
+
+    return config
+
+
+def get_lagrange_points(mu: float) -> Tuple[float, float]:
+    """
+    Calculate the Lagrange points L1 and L2 for a two-body system.
+
+    Args:
+        mu: Mass ratio of the secondary body to the total mass.
+
+    Returns:
+        Tuple containing the positions of L1 and L2.
+    """
+    if not (0 < mu < 1):
+        raise ValueError("mu must be in the range (0, 1)")
+
+    # Define the equations for L1 and L2
+    x = symbols("x")
+    eqL1 = Eq(
+        x**5
+        + ((mu - 3)) * x**4
+        + (3 - 2 * mu) * x**3
+        + (-mu) * x**2
+        + ((2 * mu)) * x
+        + (-mu),
+        0,
+    )
+    eqL2 = Eq(
+        x**5
+        + (-(mu - 3)) * x**4
+        + (3 - 2 * mu) * x**3
+        + (-mu) * x**2
+        + (-(2 * mu)) * x
+        + (-mu),
+        0,
+    )
+    L1 = (1 - mu) - solve(eqL1, dict=True)[0][x]
+    L2 = (1 - mu) + solve(eqL2, dict=True)[0][x]
+
+    return L1, L2
 
 
 class Vector:
@@ -89,3 +171,8 @@ def eval_poly1d(coefficients, x):
         if coef != 0:
             result += coef * (x**i)
     return result
+
+
+if __name__ == "__main__":
+    L1, L2 = get_lagrange_points(0.1)
+    print(f"L1: {L1}, L2: {L2}")  # Example usage to get Lagrange points

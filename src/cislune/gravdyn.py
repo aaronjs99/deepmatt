@@ -14,7 +14,6 @@ from gekko import GEKKO
 from typing import Union
 
 from cislune.utils import *
-from cislune.params import *
 
 mu_EM = mu_M / (mu_E + mu_M)
 p_E = Vector(-mu_EM * dist_EM, 0.0, 0.0)

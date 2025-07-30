@@ -12,7 +12,6 @@
 import matplotlib.pyplot as plt
 
 from cislune.utils import *
-from cislune.params import *
 
 
 def runVanDerPol():

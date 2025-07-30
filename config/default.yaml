@@ -1,0 +1,16 @@
+# Default configuration for the cislune chase simulation
+
+# Actual Earth–Moon system constants (commented out)
+# actual:
+#   mu_M: 4.9048695900e+12   # Gravitational parameter of the Moon [m^3/s^2]
+#   mu_E: 3.9860044188e+14   # Gravitational parameter of the Earth [m^3/s^2]
+#   dist_EM: 3.84399e+8      # Earth–Moon distance [m]
+
+simulated:
+  mu_M: 1.0     # Simulated lunar gravitational parameter
+  mu_E: 1.0     # Simulated Earth gravitational parameter
+  dist_EM: 1.0  # Normalized Earth–Moon distance
+
+propulsion:
+  Isp: 1.0   # Specific impulse (normalized)
+  g_0: 1.0   # Standard gravity (normalized)

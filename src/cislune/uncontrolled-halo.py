@@ -13,7 +13,6 @@ from scipy.special import legendre
 import matplotlib.pyplot as plt
 
 from cislune.utils import *
-from cislune.params import *
 
 
 def haloAccel(t, p, v, *args, **kwargs):
