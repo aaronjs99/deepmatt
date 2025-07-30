@@ -1,3 +1,106 @@
-# CisLune
+# CisLune: Stable Control in Cislunar Space
 
-Research on Cislunar Orbit Trajectories
+CisLune explores cislunar dynamics and control, offering a suite of scripts to:
+- Model the restricted three-body problem (Earth–Moon–spacecraft)  
+- Simulate and visualize halo and Lissajous orbits  
+- Design and optimize station-keeping maneuvers  
+- Analyze dynamical stability and manifold structures  
+
+## Repository Structure
+
+```
+.
+├── config/
+│   └── default.yaml          # Simulation configuration files
+├── data/                     # Sample data files (e.g., halo_orbit_points.csv)
+├── results/                  # Output directory for plots, logs, animations
+├── src/cislune/              # Core modules
+│   ├── adversary.py          # Optimal control “chase” problem
+│   ├── controlled-halo.py    # Controlled halo orbit integration & optimization
+│   ├── gravdyn.py            # Gravitational dynamics & GEKKO simulator
+│   ├── lissajous.py          # Lissajous orbit point generation
+│   ├── littdyn.py            # Linearized–plus–full dynamics simulator
+│   ├── oscillators.py        # Nonlinear oscillator examples (van der Pol, Duffing)
+│   ├── params.py             # Physical constants & Lagrange points
+│   ├── stability.py          # Stability analysis (halo manifold sampling)
+│   ├── stationkeeping.py     # Station-keeping MPC for halo orbits
+│   ├── uncontrolled-halo.py  # Uncontrolled halo orbit simulation
+│   ├── utils.py              # Vector class & integrator utility
+├── tests/                    # Unit tests (to add)
+├── run.py                    # Entry point for demos
+├── pyproject.toml
+├── .gitignore
+├── README.md
+└── LICENSE
+```
+
+## Installation
+
+Requires **Python 3.11** (or any Python ≥3.9).
+
+```bash
+# Clone the repository
+git clone https://github.com/aaronjs99/cislune
+cd cislune
+
+# (Optional) Create and activate a virtual environment
+python3.11 -m venv venv
+# macOS/Linux
+source venv/bin/activate
+# Windows
+# venv\Scripts\activate
+
+# Install the package and its dependencies from pyproject.toml
+pip install .
+
+# (Optional) Install development extras
+pip install ".[dev]"
+
+## Usage
+
+Run a quick demo of the halo orbit integrator:
+
+```bash
+python run.py --mode halo               # uses controlled-halo.py
+```
+
+For other demos:
+
+- **Lissajous points:**  
+  ```bash
+  python run.py --mode lissajous        # uses src/lissajous.py
+  ```
+- **Stability sampling:**  
+  ```bash
+  python run.py --mode stability        # uses src/stability.py
+  ```
+- **Station-keeping MPC:**  
+  ```bash
+  python run.py --mode stationkeeping   # uses src/stationkeeping.py
+  ```
+
+Output plots, CSVs, and animations will appear under `results/`.
+
+## Testing
+
+Add and run unit tests via **pytest**:
+
+```bash
+pytest tests/ -v
+```
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repo  
+2. Create a feature branch (`git checkout -b feature/YourFeature`)  
+3. Commit your changes (`git commit -m "Add X"`)  
+4. Push (`git push origin feature/YourFeature`)  
+5. Open a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
+
+## License
+
+This project is released under the **MIT License**. See [LICENSE](LICENSE) for details.

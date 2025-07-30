@@ -1,12 +1,11 @@
 # /***********************************************************
 # *                                                         *
-# * Copyright (c) 2024                                      *
+# * Copyright (c) 2025                                      *
 # *                                                         *
-# * The Verifiable & Control-Theoretic Robotics (VECTR) Lab *
 # * University of California, Los Angeles                   *
 # *                                                         *
-# * Authors: Aaron John Sabu, Brett T. Lopez                *
-# * Contact: {aaronjs, btlopez}@ucla.edu                    *
+# * Author : Aaron John Sabu                                *
+# * Contact: aaronjs@g.ucla.edu                             *
 # *                                                         *
 # ***********************************************************/
 

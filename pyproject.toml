@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cislune"
+version = "0.1.0"
+description = "Tools for Cislunar Orbit Simulation and Control"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+license = { text = "MIT" }
+authors = [
+    { name = "Aaron John Sabu", email = "aaronjs@ucla.edu" },
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "gekko",
+    "sympy",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "flake8",
+    "black",
+]
