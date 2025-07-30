@@ -17,6 +17,7 @@ dependencies = [
     "scipy",
     "gekko",
     "sympy",
+    "pandas",
     "matplotlib"
 ]
 
