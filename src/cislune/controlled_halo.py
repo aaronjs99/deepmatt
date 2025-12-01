@@ -250,7 +250,7 @@ def optimizeHalo(
 
     m.options.IMODE = 9
     m.options.MAX_ITER = 3000
-    m.options.SOLVER = 1
+    m.options.SOLVER = 3
     try:
         print("Solving...")
         m.solve(disp=True)

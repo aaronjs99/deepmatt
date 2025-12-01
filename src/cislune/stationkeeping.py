@@ -114,8 +114,9 @@ def stationkeeping(p_0, v_0, u_max):
         )
     )
 
-    m.options.SOLVER = 1
+    m.options.SOLVER = 3
     m.options.IMODE = 6
+    m.options.MAX_ITER = 1000
     m.solve(disp=True)
 
     for i in range(len(m.time)):

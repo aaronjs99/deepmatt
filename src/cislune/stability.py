@@ -276,17 +276,35 @@ def generate_stable_manifold(initial_point_opt, num_points=11, rep_num_points=10
     point_range = 0.000000010000
     eig_tol = 1.0e-5
 
-    # Initial generation around the equilibrium point
-    for i, eig in enumerate(np.linalg.eig(linearized_dynamics(initial_point_opt))[0]):
+def get_stable_eigenvector(point, eig_tol=1.0e-5):
+    """
+    Returns the stable eigenvector for the linearized dynamics at a given point.
+    Returns None if no stable eigenvalue is found.
+    """
+    evals, evecs = np.linalg.eig(linearized_dynamics(point))
+    for i, eig in enumerate(evals):
         if eig.real < -eig_tol:
-            stable_init_points.append(initial_point_opt)
-            eigvec = np.linalg.eig(linearized_dynamics(initial_point_opt))[1][i].real
-            # Normalize and orient eigenvector
-            # This is a simplification; in a full implementation we'd be more careful about direction
-            
-            for dr in np.linspace(-point_range, point_range, num_points):
-                 if dr == 0: continue
-                 stable_manifold.append(initial_point_opt + dr * eigvec / np.linalg.norm(eigvec))
+            return evecs[:, i].real
+    return None
+
+def generate_stable_manifold(initial_point_opt, num_points=11, rep_num_points=100, max_reps=10000):
+    stable_init_points = []
+    stable_manifold = []
+    midpoint = 0.000000010000
+    point_range = 0.000000010000
+    eig_tol = 1.0e-5
+
+    # Initial generation around the equilibrium point
+    eigvec = get_stable_eigenvector(initial_point_opt, eig_tol)
+    
+    if eigvec is not None:
+        stable_init_points.append(initial_point_opt)
+        # Normalize and orient eigenvector
+        # This is a simplification; in a full implementation we'd be more careful about direction
+        
+        for dr in np.linspace(-point_range, point_range, num_points):
+                if dr == 0: continue
+                stable_manifold.append(initial_point_opt + dr * eigvec / np.linalg.norm(eigvec))
 
     # Propagate backwards (or forwards depending on stability)
     # For stable manifold, we want trajectories that approach the halo orbit as t -> infinity.

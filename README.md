@@ -76,8 +76,16 @@ For other demos:
   ```bash
   python run.py --mode stationkeeping   # uses src/stationkeeping.py
   ```
+- **Manifold Transfer (Research):**
+  ```bash
+  python run.py --mode transfer         # uses src/transfer.py
+  ```
 
 Output plots, CSVs, and animations will appear under `results/`.
+
+## Known Issues
+- The `stationkeeping` mode may fail to converge with the default solver settings.
+- `controlled_halo` mode uses the IPOPT solver for better stability.
 
 ## Testing
 
