@@ -11,7 +11,7 @@ def test_optimize_leo_transfer_runs():
     with patch('cislune.transfer.differential_evolution') as mock_minimize, \
          patch('cislune.transfer.solve_ivp') as mock_solve_ivp, \
          patch('cislune.transfer.get_stable_eigenvector') as mock_get_eig, \
-         patch('cislune.transfer.plt') as mock_plt:
+         patch('cislune.transfer.plot_trajectory_3d') as mock_plot:
         
         # Mock minimize result
         mock_res = MagicMock()
@@ -35,4 +35,4 @@ def test_optimize_leo_transfer_runs():
         # Verify calls
         assert mock_minimize.called
         assert mock_solve_ivp.called
-        assert mock_plt.savefig.called
+        assert mock_plot.called

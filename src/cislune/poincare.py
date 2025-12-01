@@ -1,22 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from cislune.stability import get_stable_eigenvector, halo_dynamics, mu
+
+from cislune.params import mu, L1_HALO_INITIAL_STATE
+from cislune.gravdyn import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
 
 def poincare_map():
     print("Generating Poincaré Map...")
     
     # L1 Halo orbit initial point
-    initial_point = np.array(
-        [
-            8.2352859616538130e-01,
-            6.3030050026113780e-03,
-            1.1041843760609028e-06,
-            5.4958758023583450e-03,
-            1.2551080993197510e-01,
-            -2.4522163866711757e-07,
-        ]
-    )
+    initial_point = np.array(L1_HALO_INITIAL_STATE)
     
     eigvec = get_stable_eigenvector(initial_point)
     if eigvec is None:

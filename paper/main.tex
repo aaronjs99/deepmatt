@@ -92,6 +92,26 @@ To understand the global structure of the stable manifold, we generated a Poinca
     \label{fig:poincare}
 \end{figure}
 
+\subsection{Formation Flying}
+We simulated a formation flying scenario involving a "Chief" spacecraft in the reference L1 Halo orbit and a "Deputy" spacecraft perturbed by 10 km in the x-direction. Figure \ref{fig:formation} illustrates the relative motion. Without active control, the Deputy drifts away, highlighting the need for station-keeping or formation control strategies.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../results/formation_flying.png}
+    \caption{Formation flying simulation. Left: Trajectories of Chief (blue) and Deputy (red). Right: Relative distance over time, showing natural drift.}
+    \label{fig:formation}
+\end{figure}
+
+\subsection{Time-Optimal Transfer}
+We extended the optimization framework to minimize the Time of Flight (TOF) for the Earth-to-Halo transfer. The objective function penalized both TOF and the final distance to Earth. The optimizer found a trajectory with a transfer duration of approximately 19.5 dimensionless time units ($\sim$84 days), balancing the trade-off between speed and insertion feasibility.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../results/transfer_time_3d.png}
+    \caption{Time-optimal transfer trajectory. The green path represents the transfer minimizing the flight duration while maintaining a close approach to Earth.}
+    \label{fig:time_transfer}
+\end{figure}
+
 \section{Conclusion}
 We have developed a computational framework for finding and optimizing low-energy transfers to cislunar Halo orbits. By combining manifold theory with numerical optimization, we identified trajectories that approach Earth from an L1 Halo orbit. Future work will focus on implementing multiple shooting methods to achieve precise LEO insertion and analyzing the $\Delta V$ requirements for orbit insertion.
 

@@ -1,11 +1,9 @@
 import pytest
 import numpy as np
 
-from cislune.params import mu_earth_moon
+from cislune.params import mu
 
 from cislune.utils import integrate_simulator, Vector
-from cislune.params import mu_earth_moon
-
 def test_integrator():
     # Simple harmonic oscillator in X: x'' = -x
     def sys(t, pos, vel):
@@ -29,5 +27,5 @@ def test_integrator():
     assert np.isclose(final_vel.x, 0.0, atol=1e-1)
 
 def test_params():
-    assert mu_earth_moon > 0
-    assert mu_earth_moon < 1
+    assert mu > 0
+    assert mu < 1

@@ -21,6 +21,7 @@ from cislune.uncontrolled_halo import main as uncontrolled_halo_main
 from cislune.stationkeeping import main as stationkeeping_main
 from cislune.transfer import main as transfer_main
 from cislune.poincare import main as poincare_main
+from cislune.formation import main as formation_main
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -52,8 +53,13 @@ def main():
         stationkeeping_main()
     elif args.mode == "transfer":
         transfer_main()
+    elif args.mode == "transfer_time":
+        from cislune.transfer import optimize_time_transfer
+        optimize_time_transfer()
     elif args.mode == "poincare":
         poincare_main()
+    elif args.mode == "formation":
+        formation_main()
     else:
         print(f"Unknown mode: {args.mode}")
         sys.exit(1)

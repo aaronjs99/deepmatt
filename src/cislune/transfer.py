@@ -12,31 +12,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from cislune.stability import generate_stable_manifold, halo_dynamics, mu
+from scipy.optimize import minimize_scalar, differential_evolution
 
-from scipy.optimize import minimize_scalar
-from cislune.stability import get_stable_eigenvector, halo_dynamics, mu
+from cislune.params import mu, L1_HALO_INITIAL_STATE, EARTH_POS, MOON_POS
+from cislune.gravdyn import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
+from cislune.plotting import plot_trajectory_3d
 
 def find_transfer():
     print("Optimizing transfer trajectory...")
     # L1 Halo orbit initial point (approximate)
-    initial_point_opt = np.array(
-        [
-            8.2352859616538130e-01,
-            6.3030050026113780e-03,
-            1.1041843760609028e-06,
-            5.4958758023583450e-03,
-            1.2551080993197510e-01,
-            -2.4522163866711757e-07,
-        ]
-    )
+    initial_point_opt = np.array(L1_HALO_INITIAL_STATE)
     
     eigvec = get_stable_eigenvector(initial_point_opt)
     if eigvec is None:
         print("Could not find stable eigenvector.")
         return
 
-    earth_pos = np.array([-mu, 0, 0])
     t_span = (0, -15.0)
     t_eval = np.linspace(0, -15.0, 3000)
 
@@ -52,7 +43,7 @@ def find_transfer():
             atol=1e-12
         )
         trajectory = sol.y.T
-        dists = np.linalg.norm(trajectory[:, :3] - earth_pos, axis=1)
+        dists = np.linalg.norm(trajectory[:, :3] - EARTH_POS, axis=1)
         return np.min(dists)
 
     # Search range for perturbation
@@ -80,51 +71,22 @@ def find_transfer():
         )
         state = sol.y.T
         
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
-        
-        # Plot transfer trajectory
-        ax.plot(state[:, 0].real, state[:, 1].real, state[:, 2].real, 'b-', label='Optimized Transfer')
-        
-        # Plot Earth
-        ax.scatter([-mu], [0], [0], color='blue', s=100, label='Earth')
-        
-        # Plot Moon (approximate)
-        ax.scatter([1-mu], [0], [0], color='gray', s=50, label='Moon')
-        
-        # Plot Halo Orbit injection point
-        ax.scatter([state[0, 0].real], [state[0, 1].real], [state[0, 2].real], color='green', marker='*', s=100, label='Halo Injection')
-        
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        ax.set_title(f'Optimized Manifold Transfer to L1 Halo Orbit\nMin Dist to Earth: {min_dist:.6f}')
-        ax.legend()
-        
-        plt.savefig("results/transfer_optimized_3d.png")
-        plt.close()
-        print("Saved optimized transfer plot to results/transfer_optimized_3d.png")
+        plot_trajectory_3d(
+            state, 
+            f'Optimized Manifold Transfer to L1 Halo Orbit\nMin Dist to Earth: {min_dist:.6f}',
+            "transfer_optimized_3d.png",
+            other_points=[{'pos': state[0, :3], 'color': 'green', 'marker': '*', 's': 100, 'label': 'Halo Injection'}]
+        )
     else:
         print("Optimization failed.")
 
-from scipy.optimize import minimize, differential_evolution
 
 def optimize_leo_transfer():
     print("Optimizing transfer to LEO (Radius ~6700 km)...")
     
     # L1 Halo orbit initial point
-    initial_point_opt = np.array(
-        [
-            8.2352859616538130e-01,
-            6.3030050026113780e-03,
-            1.1041843760609028e-06,
-            5.4958758023583450e-03,
-            1.2551080993197510e-01,
-            -2.4522163866711757e-07,
-        ]
-    )
+    initial_point_opt = np.array(L1_HALO_INITIAL_STATE)
     
-    earth_pos = np.array([-mu, 0, 0])
     target_radius = 6700 / 384400.0 # Dimensionless LEO radius
     print(f"Target Radius: {target_radius:.6f}")
 
@@ -163,14 +125,11 @@ def optimize_leo_transfer():
         
         # 5. Calculate perigee deviation
         trajectory = sol_transfer.y.T
-        dists = np.linalg.norm(trajectory[:, :3] - earth_pos, axis=1)
+        dists = np.linalg.norm(trajectory[:, :3] - EARTH_POS, axis=1)
         min_dist = np.min(dists)
         
         return abs(min_dist - target_radius)
 
-    # Initial guess: tau=0, dr=best_dr from previous step
-    initial_guess = [0.0, -2.36e-9] 
-    
     # Bounds: tau [0, 3.0], dr [-1e-2, 1e-2]
     bounds = [(0.0, 3.0), (-1e-2, 1e-2)]
     
@@ -188,29 +147,17 @@ def optimize_leo_transfer():
     print(f"Final Objective (Radius Error): {res.fun:.6f}")
     
     # Re-run for plotting
-    # ... (Re-run logic similar to objective function)
     sol_halo = solve_ivp(halo_dynamics, (0, best_tau), initial_point_opt, method="DOP853", rtol=1e-9, atol=1e-12)
     point_on_halo = sol_halo.y[:, -1]
     eigvec = get_stable_eigenvector(point_on_halo)
     point_manifold = point_on_halo + best_dr * eigvec / np.linalg.norm(eigvec)
     sol_transfer = solve_ivp(halo_dynamics, (0, -15.0), point_manifold, method="DOP853", t_eval=np.linspace(0, -15.0, 3000), rtol=1e-9, atol=1e-12)
     state = sol_transfer.y.T
-    dists = np.linalg.norm(state[:, :3] - earth_pos, axis=1)
+    dists = np.linalg.norm(state[:, :3] - EARTH_POS, axis=1)
     final_min_dist = np.min(dists)
     print(f"Final Perigee Radius: {final_min_dist:.6f} (Target: {target_radius:.6f})")
 
     # Delta-V Calculation
-    # 1. Insertion Delta-V at Halo Orbit (assuming we arrive with 0 relative velocity for simplicity, or just matching state)
-    # In reality, we are on the manifold which asymptotically approaches the Halo orbit, so theoretically Delta-V is 0.
-    # However, practically we might need a small burn to stabilize.
-    # Here we calculate the departure Delta-V from LEO.
-    
-    # Velocity at perigee (from transfer trajectory)
-    # The state is [x, y, z, vx, vy, vz]
-    # We need to convert to inertial frame or use rotating frame velocity properly.
-    # In rotating frame, v_inertial = v_rotating + omega x r
-    # omega = [0, 0, 1]
-    
     r_perigee = state[-1, :3]
     v_perigee_rot = state[-1, 3:]
     
@@ -219,10 +166,7 @@ def optimize_leo_transfer():
     v_perigee_mag = np.linalg.norm(v_inertial)
     
     # Circular velocity at this radius around Earth
-    # v_circ = sqrt(mu_earth / r)
-    # In dimensionless units, G(M1+M2) = 1.
-    # mu_earth = 1 - mu
-    r_mag = np.linalg.norm(r_perigee - earth_pos)
+    r_mag = np.linalg.norm(r_perigee - EARTH_POS)
     v_circ = np.sqrt((1 - mu) / r_mag)
     
     delta_v_leo = abs(v_perigee_mag - v_circ)
@@ -233,20 +177,92 @@ def optimize_leo_transfer():
     print(f"Circular Velocity at Perigee: {v_circ * 1024.6:.2f} m/s")
     print(f"LEO Injection Delta-V: {delta_v_leo * 1024.6:.2f} m/s")
 
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(state[:, 0].real, state[:, 1].real, state[:, 2].real, 'b-', label='LEO Transfer')
-    ax.scatter([-mu], [0], [0], color='blue', s=100, label='Earth')
-    ax.scatter([1-mu], [0], [0], color='gray', s=50, label='Moon')
-    ax.set_title(f'Optimized Transfer to LEO\nPerigee: {final_min_dist:.6f}\nDelta-V: {delta_v_leo * 1024.6:.2f} m/s')
-    ax.legend()
-    plt.savefig("results/transfer_leo_3d.png")
-    plt.close()
-    print("Saved plot to results/transfer_leo_3d.png")
+    plot_trajectory_3d(
+        state,
+        f'Optimized Transfer to LEO\nPerigee: {final_min_dist:.6f}\nDelta-V: {delta_v_leo * 1024.6:.2f} m/s',
+        "transfer_leo_3d.png"
+    )
+
+def optimize_time_transfer():
+    print("Optimizing Time-Optimal Transfer to Earth...")
+    
+    # L1 Halo orbit initial point
+    initial_point_opt = np.array(L1_HALO_INITIAL_STATE)
+    
+    target_dist = 0.05 # Define "Earth vicinity" as within this distance
+
+    def objective(params):
+        tau, dr, tof = params
+        
+        # 1. Propagate along Halo orbit for time tau
+        sol_halo = solve_ivp(
+            halo_dynamics,
+            (0, tau),
+            initial_point_opt,
+            method="DOP853",
+            rtol=1e-9,
+            atol=1e-12
+        )
+        point_on_halo = sol_halo.y[:, -1]
+        
+        # 2. Get stable eigenvector
+        eigvec = get_stable_eigenvector(point_on_halo)
+        if eigvec is None:
+            return 100.0 # Penalty
+            
+        # 3. Perturb onto manifold
+        point_manifold = point_on_halo + dr * eigvec / np.linalg.norm(eigvec)
+        
+        # 4. Integrate backwards for TOF
+        sol_transfer = solve_ivp(
+            halo_dynamics,
+            (0, -tof),
+            point_manifold,
+            method="DOP853",
+            rtol=1e-9,
+            atol=1e-12
+        )
+        
+        final_state = sol_transfer.y[:, -1]
+        dist_to_earth = np.linalg.norm(final_state[:3] - EARTH_POS)
+        
+        # Objective: Minimize TOF, but must reach Earth vicinity
+        # Penalty method: J = TOF + Penalty * max(0, dist - target_dist)
+        penalty = 1000.0 * max(0, dist_to_earth - target_dist)
+        
+        return tof + penalty
+
+    # Bounds: tau [0, 3.0], dr [-1e-2, 1e-2], tof [0, 20.0]
+    bounds = [(0.0, 3.0), (-1e-2, 1e-2), (5.0, 20.0)]
+    
+    res = differential_evolution(objective, bounds, strategy='best1bin', maxiter=20, popsize=10, tol=1e-3)
+    
+    print(res)
+    if res.success or True: # Proceed with best result
+        best_tau, best_dr, best_tof = res.x
+        print(f"Best tau: {best_tau:.4f}")
+        print(f"Best dr: {best_dr}")
+        print(f"Best TOF: {best_tof:.4f}")
+        
+        # Re-run for plotting
+        sol_halo = solve_ivp(halo_dynamics, (0, best_tau), initial_point_opt, method="DOP853", rtol=1e-9, atol=1e-12)
+        point_on_halo = sol_halo.y[:, -1]
+        eigvec = get_stable_eigenvector(point_on_halo)
+        point_manifold = point_on_halo + best_dr * eigvec / np.linalg.norm(eigvec)
+        sol_transfer = solve_ivp(halo_dynamics, (0, -best_tof), point_manifold, method="DOP853", t_eval=np.linspace(0, -best_tof, 1000), rtol=1e-9, atol=1e-12)
+        state = sol_transfer.y.T
+        
+        plot_trajectory_3d(
+            state,
+            f'Time-Optimal Transfer\nTOF: {best_tof:.4f} (dimensionless)',
+            "transfer_time_3d.png",
+            other_points=[{'pos': state[0, :3], 'color': 'green', 'marker': '*', 's': 100, 'label': 'Halo Injection'}]
+        )
 
 def main():
     # find_transfer()
-    optimize_leo_transfer()
+    # optimize_leo_transfer()
+    optimize_time_transfer()
 
 if __name__ == "__main__":
     main()

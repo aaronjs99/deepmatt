@@ -167,3 +167,79 @@ if __name__ == "__main__":
     axes[2].set_title("Z")
 
     plt.show()
+
+# --- Refactored Dynamics ---
+from cislune.params import mu
+
+def cr3bp_dynamics(t, x, *args, **kwargs):
+    """
+    Circular Restricted Three-Body Problem (CR3BP) dynamics.
+    """
+    if "m" in kwargs:
+        m = kwargs["m"]
+    else:
+        m = np
+    r1 = m.sqrt((x[0] + mu) ** 2 + x[1] ** 2 + x[2] ** 2)
+    r2 = m.sqrt((x[0] - 1 + mu) ** 2 + x[1] ** 2 + x[2] ** 2)
+    return [
+        x[3],
+        x[4],
+        x[5],
+        x[0] + 2 * x[4] - (1 - mu) * (x[0] + mu) / r1**3 - mu * (x[0] - 1 + mu) / r2**3,
+        x[1] - 2 * x[3] - (1 - mu) * x[1] / r1**3 - mu * x[1] / r2**3,
+        -(1 - mu) * x[2] / r1**3 - mu * x[2] / r2**3,
+    ]
+
+def linearized_dynamics(x):
+    """
+    Linearized dynamics matrix (Jacobian) for CR3BP.
+    """
+    A = np.zeros((6, 6))
+    A[:3, 3:] = np.eye(3)
+    A[3, 4] = 2
+    A[4, 3] = -2
+    
+    r1 = np.sqrt((x[0] + mu) ** 2 + x[1] ** 2 + x[2] ** 2)
+    r2 = np.sqrt((x[0] - 1 + mu) ** 2 + x[1] ** 2 + x[2] ** 2)
+    
+    # Partial derivatives of potential U w.r.t position
+    # Uxx, Uyy, Uzz, Uxy, Uxz, Uyz
+    # Simplified for collinear points (y=z=0) but full form needed generally
+    # Using the form from stability.py
+    
+    A[3, 0] = (
+        1
+        - (1 - mu) / r1**3
+        + 3 * (1 - mu) * (x[0] + mu) ** 2 / r1**5
+        - mu / r2**3
+        + 3 * mu * (x[0] - 1 + mu) ** 2 / r2**5
+    )
+    A[4, 1] = (
+        1
+        - (1 - mu) / r1**3
+        + 3 * (1 - mu) * x[1] ** 2 / r1**5
+        - mu / r2**3
+        + 3 * mu * x[1] ** 2 / r2**5
+    )
+    A[5, 2] = (
+        -(1 - mu) / r1**3
+        + 3 * (1 - mu) * x[2] ** 2 / r1**5
+        - mu / r2**3
+        + 3 * mu * x[2] ** 2 / r2**5
+    )
+    # Note: Cross terms are non-zero if y, z != 0, but for Halo approximation often neglected or handled by full linearization
+    # The original code only had diagonal terms in the lower-left block.
+    # Let's keep it consistent with the original stability.py for now.
+    
+    return A
+
+def get_stable_eigenvector(point, eig_tol=1.0e-5):
+    """
+    Returns the stable eigenvector for the linearized dynamics at a given point.
+    Returns None if no stable eigenvalue is found.
+    """
+    evals, evecs = np.linalg.eig(linearized_dynamics(point))
+    for i, eig in enumerate(evals):
+        if eig.real < -eig_tol:
+            return evecs[:, i].real
+    return None
