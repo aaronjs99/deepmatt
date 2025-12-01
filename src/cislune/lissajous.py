@@ -57,7 +57,9 @@ def runLissajous():
     # ax.set_ylim([-500000000, 500000000])
     # ax.set_zlim([-500000000, 500000000])
     ax.view_init(30, 135)
-    plt.show()
+    # plt.show()
+    plt.savefig("results/lissajous_3d.png")
+    plt.close()
 
     fig = plt.figure()
     # axbound = max(np.max(np.abs(x)), np.max(np.abs(y)), np.max(np.abs(z))) * 1.05
@@ -71,7 +73,9 @@ def runLissajous():
     ax.set_xlabel("Time")
     ax.set_ylabel("Position")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/lissajous_pos.png")
+    plt.close()
 
     fig = plt.figure()
     v_x = np.gradient(x, t)
@@ -88,7 +92,9 @@ def runLissajous():
     ax.set_xlabel("Time")
     ax.set_ylabel("Velocity")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/lissajous_vel.png")
+    plt.close()
 
 
 def runRichardson():
@@ -185,6 +191,9 @@ def runRichardson():
     plt.show()
 
 
-if __name__ == "__main__":
+def main():
     # runRichardson()
     runLissajous()
+
+if __name__ == "__main__":
+    main()

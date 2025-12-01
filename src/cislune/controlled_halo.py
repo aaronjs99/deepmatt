@@ -176,16 +176,18 @@ def runHalo(timeRange):
     plt.show()
 
 
-def optimizeHalo(initPos, initVel, initInp, timeRange, *args, **kwargs):
+def optimizeHalo(
+    initPos, initVel, initInp, timeRange, periodicity_time, *args, **kwargs
+):
     m = GEKKO(remote=True, server="https://apmonitor.com")
-    m.time = timeRange - timeRange[0]
+    m.time = (timeRange - timeRange[0]).tolist()
 
-    pos = [m.Var() for i in range(3)]
-    vel = [m.Var() for i in range(3)]
-    posd = [m.Var() for i in range(3)]
-    veld = [m.Var() for i in range(3)]
-    inp = [m.Var() for i in range(3)]
-    time = m.Param(value=timeRange)
+    pos = [m.Var(name=f"pos_{i}") for i in range(3)]
+    vel = [m.Var(name=f"vel_{i}") for i in range(3)]
+    posd = [m.Var(name=f"posd_{i}") for i in range(3)]
+    veld = [m.Var(name=f"veld_{i}") for i in range(3)]
+    inp = [m.Var(name=f"inp_{i}") for i in range(3)]
+    time = m.Param(value=timeRange, name="time_param")
 
     for i in range(3):
         pos[i].value = [initPos.x, initPos.y, initPos.z][i]
@@ -248,7 +250,7 @@ def optimizeHalo(initPos, initVel, initInp, timeRange, *args, **kwargs):
 
     m.options.IMODE = 9
     m.options.MAX_ITER = 3000
-    m.options.SOLVER = 3
+    m.options.SOLVER = 1
     try:
         print("Solving...")
         m.solve(disp=True)
@@ -309,13 +311,13 @@ def iterateHalo(
         timeRange = np.linspace(i * iteration_time, (i + 1) * iteration_time, num_steps)
         if i == 0:
             pos, vel, posd, veld, inp = optimizeHalo(
-                initPos, initVel, initInp, timeRange
+                initPos, initVel, initInp, timeRange, periodicity_time
             )
         else:
             for j in range(3):
                 prevData[j][0:periodicity_time] = allPos[j][-periodicity_time:]
             pos, vel, posd, veld, inp = optimizeHalo(
-                initPos, initVel, initInp, timeRange, prevData=prevData
+                initPos, initVel, initInp, timeRange, periodicity_time, prevData=prevData
             )
         for j in range(3):
             allPos[j].extend(pos[j])
@@ -338,7 +340,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, allInp, fig=None):
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/controlled_halo_3d.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -366,7 +370,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, allInp, fig=None):
     ax.set_title("Error and Control Input")
     ax.set_xlabel("Time")
     ax.set_ylabel("Error")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/controlled_halo_error.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -377,7 +383,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, allInp, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Position")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/controlled_halo_pos.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -387,7 +395,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, allInp, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Velocity")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/controlled_halo_vel.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -397,10 +407,12 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, allInp, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Input")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/controlled_halo_input.png")
+    plt.close()
 
 
-if __name__ == "__main__":
+def main():
     # p_0 =  Vector(-Ax,     0, -Az)
     # V_0 = []
     # for i in range(1):
@@ -467,3 +479,7 @@ if __name__ == "__main__":
     plt.show()
 
     plotter(allTime, AllPos[0], AllVel[0], AllPosd[0], AllVeld[0], AllInp[0])
+
+
+if __name__ == "__main__":
+    main()

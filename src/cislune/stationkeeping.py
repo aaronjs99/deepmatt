@@ -57,7 +57,7 @@ def f_c(theta, r, u, epsilon, *args, **kwargs):
 
 
 def stationkeeping(p_0, v_0, u_max):
-    halo_orbit = import_patch_points("halo_orbit_points.csv")
+    halo_orbit = import_patch_points("data/halo_orbit_points.csv")
     robot_position = p_0
     robot_velocity = v_0
     dt = 0.01
@@ -71,7 +71,7 @@ def stationkeeping(p_0, v_0, u_max):
     time_history = []
 
     m = GEKKO(remote=True, server="http://apmonitor.com")
-    m.time = np.linspace(0, T, int(T / dt))
+    m.time = np.linspace(0, T, int(T / dt) + 1).tolist()
 
     theta = m.Var(value=0.0)
     r = m.Array(m.Var, 6)
@@ -114,7 +114,7 @@ def stationkeeping(p_0, v_0, u_max):
         )
     )
 
-    m.options.SOLVER = 2
+    m.options.SOLVER = 1
     m.options.IMODE = 6
     m.solve(disp=True)
 
@@ -127,7 +127,7 @@ def stationkeeping(p_0, v_0, u_max):
     return position_history, velocity_history, control_input_history, time_history
 
 
-if __name__ == "__main__":
+def main():
     p_0 = np.array(
         [
             8.2339090555970500e-01,
@@ -142,9 +142,14 @@ if __name__ == "__main__":
             0.0000000000000000e00,
         ]
     )
-    position_history, velocity_history, control_input_history, time_history = (
-        stationkeeping(p_0, v_0, u_max=1000)
-    )
+    try:
+        position_history, velocity_history, control_input_history, time_history = (
+            stationkeeping(p_0, v_0, u_max=1000)
+        )
+    except FileNotFoundError:
+        print("halo_orbit_points.csv not found. Cannot run stationkeeping.")
+        return
+
     # print("Position History: ", position_history)
     # print("Velocity History: ", velocity_history)
     # print("Control Input History: ", control_input_history)
@@ -162,7 +167,9 @@ if __name__ == "__main__":
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
     ax.set_title("Stationkeeping")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/stationkeeping_3d.png")
+    plt.close()
 
     # plot control input
     fig = plt.figure()
@@ -174,4 +181,10 @@ if __name__ == "__main__":
     ax.set_ylabel("Control Input")
     ax.set_title("Stationkeeping")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/stationkeeping_input.png")
+    plt.close()
+
+
+if __name__ == "__main__":
+    main()

@@ -17,7 +17,16 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from cislune.utils import load_config, Vector, integrate_simulator
 
-config = load_config("config.yaml")
+import os
+# Try to find config file
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+config_path = os.path.join(base_dir, "config", "default.yaml")
+if not os.path.exists(config_path):
+    # Fallback for when installed as package (if config is packaged)
+    # For now, just try local config.yaml
+    config_path = "config.yaml"
+
+config = load_config(config_path)
 
 mu_EM = config["mu_M"] / (config["mu_E"] + config["mu_M"])
 p_E = Vector(-mu_EM * config["dist_EM"], 0.0, 0.0)

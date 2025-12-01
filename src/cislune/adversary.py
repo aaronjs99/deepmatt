@@ -202,7 +202,9 @@ class ParetoSweep:
         plt.title("Pareto Front")
         plt.grid(True)
         plt.tight_layout()
-        plt.show()
+        # plt.show()
+        plt.savefig("results/adversary_pareto.png")
+        plt.close()
 
 
 def main(

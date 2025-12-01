@@ -12,6 +12,7 @@
 from scipy.special import legendre
 import matplotlib.pyplot as plt
 from gekko import GEKKO
+import numpy as np
 
 from cislune.utils import *
 
@@ -160,7 +161,7 @@ def runHalo(timeRange):
     plt.show()
 
 
-def optimizeHalo(initPos, initVel, timeRange, *args, **kwargs):
+def optimizeHalo(initPos, initVel, timeRange, periodicity_time, *args, **kwargs):
     m = GEKKO(remote=True, server="https://apmonitor.com")
     m.time = timeRange - timeRange[0]
 
@@ -242,12 +243,14 @@ def iterateHalo(
         print(f"Running iteration  {i+1} of {num_iterations}")
         timeRange = np.linspace(i * iteration_time, (i + 1) * iteration_time, num_steps)
         if i == 0:
-            pos, vel, posd, veld = optimizeHalo(initPos, initVel, timeRange)
+            pos, vel, posd, veld = optimizeHalo(
+                initPos, initVel, timeRange, periodicity_time
+            )
         else:
             for j in range(3):
                 prevData[j][0:periodicity_time] = allPos[j][-periodicity_time:]
             pos, vel, posd, veld = optimizeHalo(
-                initPos, initVel, timeRange, prevData=prevData
+                initPos, initVel, timeRange, periodicity_time, prevData=prevData
             )
         for j in range(3):
             allPos[j].extend(pos[j])
@@ -268,7 +271,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/uncontrolled_halo_3d.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -288,7 +293,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_title("Error")
     ax.set_xlabel("Time")
     ax.set_ylabel("Error")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/uncontrolled_halo_error.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -299,7 +306,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Position")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/uncontrolled_halo_pos.png")
+    plt.close()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -309,10 +318,12 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Velocity")
     ax.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig("results/uncontrolled_halo_vel.png")
+    plt.close()
 
 
-if __name__ == "__main__":
+def main():
     p_0 = Vector(-Ax, 0, -Az)
     V_0 = []
     for i in range(1):
@@ -367,3 +378,7 @@ if __name__ == "__main__":
     plt.show()
 
     plotter(allTime, AllPos[0], AllVel[0], AllPosd[0], AllVeld[0])
+
+
+if __name__ == "__main__":
+    main()

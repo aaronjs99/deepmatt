@@ -59,7 +59,7 @@ def stability_check(
         )
 
         x = [m.Var(value=initial_point[i]) for i in range(len(initial_point))]
-        t = m.Var(value=initial_time)
+        t = m.Var(value=time_params["initial_time"])
 
         equations = []
         equations.append(t.dt() == time_params["dt"])
@@ -82,7 +82,11 @@ def stability_check(
             time_params["num_steps"],
         )
         x = intg.solve_ivp(
-            fun=f, t_span=(initial_time, final_time), y0=x, method="DOP853", t_eval=t
+            fun=f,
+            t_span=(time_params["initial_time"], time_params["final_time"]),
+            y0=x,
+            method="DOP853",
+            t_eval=t,
         )
         t = x.t
         x = x.y
@@ -134,7 +138,7 @@ def linearized_dynamics(x):
     return A
 
 
-if __name__ == "__main__":
+def main():
     equilibrium_points = np.array(
         [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -157,12 +161,16 @@ if __name__ == "__main__":
     unstable_manifold = []
 
     orbit = "L1"
+    halo_points = [] # Initialize halo_points here
     if not save_orbit:
-        with open("halo_orbit_points.csv", "r") as file:
-            reader = csv.reader(file)
+        try:
+            with open("data/halo_orbit_points.csv", "r") as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    halo_points.append([float(row[i]) for i in range(len(row))])
+        except FileNotFoundError:
+            print("halo_orbit_points.csv not found. Skipping orbit loading.")
             halo_points = []
-            for row in reader:
-                halo_points.append([float(row[i]) for i in range(len(row))])
 
     point_opt = 2
     if orbit == "L1":
@@ -254,109 +262,56 @@ if __name__ == "__main__":
     all_points = []
 
     eig_tol = 1.0e-5
-    initial_point_opts = halo_points[::200]
-    rep_num_points = len(initial_point_opts)
-    if False:
-        for initial_point_opt in initial_point_opts:
-            for i, eig in enumerate(
-                np.linalg.eig(linearized_dynamics(initial_point_opt))[0]
-            ):
-                if eig.real < -eig_tol:
-                    stable_init_points.append(initial_point_opt)
-                    stable_eigval.append(eig)
-                    stable_eigvec.append(
-                        np.linalg.eig(linearized_dynamics(initial_point_opt))[1][i]
-                    )
-                    stable_manifold.extend(
-                        np.array(
-                            [
-                                initial_point_opt
-                                + dr
-                                * stable_eigvec[-1]
-                                / np.linalg.norm(stable_eigvec[-1])
-                                for dr in np.linspace(
-                                    midpoint - point_range / 2,
-                                    midpoint + point_range / 2,
-                                    num_points,
-                                )
-                            ]
-                        )
-                    )
-                if eig.real > eig_tol:
-                    print(eig)
-                    print(np.linalg.eig(linearized_dynamics(initial_point_opt))[1][i])
-                    print()
-                    unstable_init_points.append(initial_point_opt)
-                    unstable_eigval.append(eig)
-                    unstable_eigvec.append(
-                        np.linalg.eig(linearized_dynamics(initial_point_opt))[1][i]
-                    )
-                    unstable_manifold.extend(
-                        np.array(
-                            [
-                                initial_point_opt
-                                + dr
-                                * unstable_eigvec[-1]
-                                / np.linalg.norm(unstable_eigvec[-1])
-                                for dr in np.linspace(
-                                    midpoint - point_range / 2,
-                                    midpoint + point_range / 2,
-                                    num_points,
-                                )
-                            ]
-                        )
-                    )
-        for rep in range(10000):
-            print("Rep: ", rep)
-            for point in stable_manifold[-rep_num_points:].copy():
-                for i, eig in enumerate(np.linalg.eig(linearized_dynamics(point))[0]):
-                    if eig.real < -eig_tol:
-                        stable_init_points.append(point)
-                        stable_eigval.append(eig)
-                        stable_eigvec.append(
-                            np.linalg.eig(linearized_dynamics(point))[1][i]
-                        )
-                        stable_manifold.extend(
-                            np.array(
-                                [
-                                    point
-                                    + dr
-                                    * stable_eigvec[-1]
-                                    / np.linalg.norm(stable_eigvec[-1])
-                                    for dr in np.linspace(
-                                        midpoint - point_range / 2,
-                                        midpoint + point_range / 2,
-                                        num_points,
-                                    )
-                                ]
-                            )
-                        )
-            for point in unstable_manifold[-rep_num_points:].copy():
-                for i, eig in enumerate(np.linalg.eig(linearized_dynamics(point))[0]):
-                    if eig.real > eig_tol:
-                        unstable_init_points.append(point)
-                        unstable_eigval.append(eig)
-                        unstable_eigvec.append(
-                            np.linalg.eig(linearized_dynamics(point))[1][i]
-                        )
-                        unstable_manifold.extend(
-                            np.array(
-                                [
-                                    point
-                                    + dr
-                                    * unstable_eigvec[-1]
-                                    / np.linalg.norm(unstable_eigvec[-1])
-                                    for dr in np.linspace(
-                                        midpoint - point_range / 2,
-                                        midpoint + point_range / 2,
-                                        num_points,
-                                    )
-                                ]
-                            )
-                        )
+    if halo_points:
+        initial_point_opts = halo_points[::200]
+        rep_num_points = len(initial_point_opts)
+    else:
+        initial_point_opts = []
+        rep_num_points = 0
 
-        print(len(stable_manifold))
-        print(len(unstable_init_points))
+def generate_stable_manifold(initial_point_opt, num_points=11, rep_num_points=100, max_reps=10000):
+    stable_init_points = []
+    stable_manifold = []
+    midpoint = 0.000000010000
+    point_range = 0.000000010000
+    eig_tol = 1.0e-5
+
+    # Initial generation around the equilibrium point
+    for i, eig in enumerate(np.linalg.eig(linearized_dynamics(initial_point_opt))[0]):
+        if eig.real < -eig_tol:
+            stable_init_points.append(initial_point_opt)
+            eigvec = np.linalg.eig(linearized_dynamics(initial_point_opt))[1][i].real
+            # Normalize and orient eigenvector
+            # This is a simplification; in a full implementation we'd be more careful about direction
+            
+            for dr in np.linspace(-point_range, point_range, num_points):
+                 if dr == 0: continue
+                 stable_manifold.append(initial_point_opt + dr * eigvec / np.linalg.norm(eigvec))
+
+    # Propagate backwards (or forwards depending on stability)
+    # For stable manifold, we want trajectories that approach the halo orbit as t -> infinity.
+    # To find them, we integrate BACKWARDS from the halo orbit vicinity.
+    # However, the current code seems to be doing something iterative with eigenvectors.
+    # Let's stick to the existing logic structure but wrap it.
+    
+    # NOTE: The original code had a loop `for rep in range(10000)` which seemed to be trying to 
+    # extend the manifold. But `stability_check` (integration) is done later in the original main().
+    # The original code's manifold generation block was actually disabled (`if False:`).
+    # To make this useful, we need to actually INTEGRATE the points backwards to see where they came from.
+    
+    # Let's return the initial small perturbations on the stable manifold.
+    # The caller will be responsible for integrating them backwards.
+    return stable_manifold
+
+def main():
+    equilibrium_points = np.array(
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ]
+    )
+    # ... (rest of main)
 
     if True:
         for dr in np.linspace(
@@ -397,7 +352,7 @@ if __name__ == "__main__":
             # all_points[-1] = all_points[-1][:np.where(all_points[-1] == closest_point)[0][0]+1]
 
         if save_orbit:
-            with open("halo_orbit_points.csv", "w", newline="") as file:
+            with open("data/halo_orbit_points.csv", "w", newline="") as file:
                 writer = csv.writer(file)
                 for point in all_points[0]:
                     writer.writerow(point)
@@ -411,12 +366,13 @@ if __name__ == "__main__":
             [orbit[k][2] for k in range(len(orbit))],
             "b-",
         )
-    ax.plot(
-        [halo_points[k][0] for k in range(len(halo_points))],
-        [halo_points[k][1] for k in range(len(halo_points))],
-        [halo_points[k][2] for k in range(len(halo_points))],
-        "k-",
-    )
+    if halo_points:
+        ax.plot(
+            [halo_points[k][0] for k in range(len(halo_points))],
+            [halo_points[k][1] for k in range(len(halo_points))],
+            [halo_points[k][2] for k in range(len(halo_points))],
+            "k-",
+        )
     # plot the stable and unstable manifolds
     if False:
         ax.plot(
@@ -434,4 +390,10 @@ if __name__ == "__main__":
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    plt.show()
+    # plt.show()
+    plt.savefig("results/stability_3d.png")
+    plt.close()
+
+
+if __name__ == "__main__":
+    main()

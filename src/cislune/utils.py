@@ -14,18 +14,30 @@ from typing import Tuple
 from sympy import symbols, Eq, solve
 
 
-def load_config(config_path: str) -> dict:
+import os
+
+def load_config(config_path: str = None) -> dict:
     """
     Load configuration from a YAML file.
 
     Args:
-        config_path: Path to the YAML configuration file.
+        config_path: Path to the YAML configuration file. If None, loads default.
 
     Returns:
         Dictionary containing the configuration parameters.
     """
+    if config_path is None:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        config_path = os.path.join(base_dir, "config", "default.yaml")
+        if not os.path.exists(config_path):
+            config_path = "config.yaml"
+
     with open(config_path, "r") as file:
         config = yaml.safe_load(file)
+    
+    if "simulated" in config:
+        config.update(config["simulated"])
+        
     config = derive_values(config)
     return config
 
