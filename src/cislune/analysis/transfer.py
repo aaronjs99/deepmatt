@@ -182,6 +182,8 @@ def optimize_leo_transfer():
         f'Optimized Transfer to LEO\nPerigee: {final_min_dist:.6f}\nDelta-V: {delta_v_leo * 1024.6:.2f} m/s',
         "transfer_leo.png"
     )
+    
+    return best_tau, best_dr, delta_v_leo
 
 def optimize_time_transfer():
     print("Optimizing Time-Optimal Transfer to Earth...")
