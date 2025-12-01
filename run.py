@@ -51,15 +51,34 @@ def main():
         stability_main()
     elif args.mode == "stationkeeping":
         stationkeeping_main()
-    elif args.mode == "transfer":
-        transfer_main()
-    elif args.mode == "transfer_time":
+    elif args.mode == "transfer_earth":
+        from cislune.transfer import find_transfer
+        find_transfer()
+    elif args.mode == "transfer_leo":
+        from cislune.transfer import optimize_leo_transfer
+        optimize_leo_transfer()
+    elif args.mode == "transfer_fast":
         from cislune.transfer import optimize_time_transfer
         optimize_time_transfer()
     elif args.mode == "poincare":
         poincare_main()
     elif args.mode == "formation":
         formation_main()
+    elif args.mode == "generate_results":
+        print("Generating all results...")
+        uncontrolled_halo_main()
+        # controlled_halo_main() # Skip for now as it uses different solver/might be slow
+        lissajous_main()
+        stability_main()
+        
+        from cislune.transfer import find_transfer, optimize_leo_transfer, optimize_time_transfer
+        find_transfer()
+        optimize_leo_transfer()
+        optimize_time_transfer()
+        
+        poincare_main()
+        formation_main()
+        print("All results generated in results/")
     else:
         print(f"Unknown mode: {args.mode}")
         sys.exit(1)

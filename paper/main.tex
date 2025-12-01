@@ -76,14 +76,28 @@ We analyzed the velocity requirements for the optimized transfer. The transfer t
 This relatively low $\Delta V$ confirms the efficiency of manifold-based transfers compared to direct transfers.
 
 \subsection{Manifold Topology}
-To understand the global structure of the stable manifold, we generated a Poincaré map by intersecting 50 manifold trajectories with the $z=0$ plane. Figure \ref{fig:poincare} shows the $(x, \dot{x})$ phase space of these intersections. The coherent structure indicates the existence of a "tube" of trajectories that can be exploited for transfer design.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../results/transfer_earth.png}
+    \caption{Optimized transfer trajectory from L1 Halo orbit to Earth vicinity. The blue path shows the trajectory along the stable manifold.}
+    \label{fig:transfer}
+\end{figure}
+
+\subsection{LEO Targeting}
+To make the transfer practical for Earth return or LEO insertion, we refined the optimization to target a specific perigee radius of 6700 km (approximate LEO altitude). The optimizer adjusted the manifold insertion point and time to achieve a perigee of 6700 km.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{../results/transfer_leo_3d.png}
-    \caption{Optimized transfer trajectory targeting LEO. The green star indicates the Halo orbit insertion point. The blue trajectory shows the transfer from Earth vicinity.}
-    \label{fig:transfer}
+    \includegraphics[width=0.8\textwidth]{../results/transfer_leo.png}
+    \caption{Transfer trajectory targeting a 6700 km LEO perigee. The calculated $\Delta V$ for LEO injection is approximately 3.1 km/s.}
+    \label{fig:leo_transfer}
 \end{figure}
+
+\subsection{Delta-V Analysis}
+We calculated the $\Delta V$ required to capture into LEO from the transfer trajectory. The arrival velocity at perigee was compared to the local circular velocity. The results indicate a $\Delta V$ of $\sim$3.15 km/s is required for LEO insertion, which is consistent with typical lunar return velocities.
+
+\subsection{Manifold Topology}
+Figure \ref{fig:poincare} shows the Poincaré section of the stable manifold at the $z=0$ plane. This visualization helps identify stable regions and the structure of the phase space flow.
 
 \begin{figure}[H]
     \centering
@@ -107,7 +121,7 @@ We extended the optimization framework to minimize the Time of Flight (TOF) for 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{../results/transfer_time_3d.png}
+    \includegraphics[width=0.8\textwidth]{../results/transfer_fast.png}
     \caption{Time-optimal transfer trajectory. The green path represents the transfer minimizing the flight duration while maintaining a close approach to Earth.}
     \label{fig:time_transfer}
 \end{figure}

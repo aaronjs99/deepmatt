@@ -74,7 +74,7 @@ def find_transfer():
         plot_trajectory_3d(
             state, 
             f'Optimized Manifold Transfer to L1 Halo Orbit\nMin Dist to Earth: {min_dist:.6f}',
-            "transfer_optimized_3d.png",
+            "transfer_earth.png",
             other_points=[{'pos': state[0, :3], 'color': 'green', 'marker': '*', 's': 100, 'label': 'Halo Injection'}]
         )
     else:
@@ -180,7 +180,7 @@ def optimize_leo_transfer():
     plot_trajectory_3d(
         state,
         f'Optimized Transfer to LEO\nPerigee: {final_min_dist:.6f}\nDelta-V: {delta_v_leo * 1024.6:.2f} m/s',
-        "transfer_leo_3d.png"
+        "transfer_leo.png"
     )
 
 def optimize_time_transfer():
@@ -255,7 +255,7 @@ def optimize_time_transfer():
         plot_trajectory_3d(
             state,
             f'Time-Optimal Transfer\nTOF: {best_tof:.4f} (dimensionless)',
-            "transfer_time_3d.png",
+            "transfer_fast.png",
             other_points=[{'pos': state[0, :3], 'color': 'green', 'marker': '*', 's': 100, 'label': 'Halo Injection'}]
         )
 

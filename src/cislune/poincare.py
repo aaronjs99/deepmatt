@@ -23,7 +23,8 @@ def poincare_map():
     z_crossing.direction = 0 # Detect both directions
 
     # Generate trajectories
-    perturbations = np.linspace(-1e-4, 1e-4, 50)
+    # Increase density for better resolution
+    perturbations = np.linspace(-1e-4, 1e-4, 500)
     intersections = []
 
     for dr in perturbations:
@@ -41,21 +42,22 @@ def poincare_map():
         
         if len(sol.t_events[0]) > 0:
             # Collect (x, vx) at crossing
-            for i in range(len(sol.t_events[0])):
-                # y_events is a list of arrays, one for each event type
-                state = sol.y_events[0][i]
-                intersections.append([state[0], state[3]]) # x, vx
+            for i, state in enumerate(sol.y_events[0]):
+                # state is the full state vector at the event
+                intersections.append([state[0], state[3], i]) # x, vx, crossing_number
 
     intersections = np.array(intersections)
     
     if len(intersections) > 0:
-        plt.figure(figsize=(10, 8))
-        plt.scatter(intersections[:, 0], intersections[:, 1], s=1, c='blue')
+        plt.figure(figsize=(12, 10))
+        # Color by crossing number to show structure
+        sc = plt.scatter(intersections[:, 0], intersections[:, 1], c=intersections[:, 2], cmap='viridis', s=2, alpha=0.8)
+        plt.colorbar(sc, label='Crossing Number')
         plt.xlabel('x (dimensionless)')
         plt.ylabel('vx (dimensionless)')
         plt.title('Poincaré Map (z=0 Section) of Stable Manifold')
-        plt.grid(True)
-        plt.savefig("results/poincare_map.png")
+        plt.grid(True, alpha=0.3)
+        plt.savefig("results/poincare_map.png", dpi=300)
         plt.close()
         print("Saved Poincaré map to results/poincare_map.png")
     else:
