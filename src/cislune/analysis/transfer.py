@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from scipy.optimize import minimize_scalar, differential_evolution
 
-from cislune.params import mu, L1_HALO_INITIAL_STATE, EARTH_POS, MOON_POS
-from cislune.gravdyn import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
-from cislune.plotting import plot_trajectory_3d
+from cislune.core.params import mu, L1_HALO_INITIAL_STATE, EARTH_POS, MOON_POS
+from cislune.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
+from cislune.core.plotting import plot_trajectory_3d
 
 def find_transfer():
     print("Optimizing transfer trajectory...")

@@ -11,7 +11,7 @@
 
 import numpy as np
 
-from cislune.utils import *
+from cislune.core.utils import *
 
 
 def runLissajous():

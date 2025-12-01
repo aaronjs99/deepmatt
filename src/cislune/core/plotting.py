@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from cislune.params import mu, EARTH_POS, MOON_POS
+from cislune.core.params import mu, EARTH_POS, MOON_POS
 
 def plot_trajectory_3d(states, title, filename, show_earth=True, show_moon=True, other_points=None):
     """

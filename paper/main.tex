@@ -97,7 +97,11 @@ To make the transfer practical for Earth return or LEO insertion, we refined the
 We calculated the $\Delta V$ required to capture into LEO from the transfer trajectory. The arrival velocity at perigee was compared to the local circular velocity. The results indicate a $\Delta V$ of $\sim$3.15 km/s is required for LEO insertion, which is consistent with typical lunar return velocities.
 
 \subsection{Manifold Topology}
-Figure \ref{fig:poincare} shows the Poincaré section of the stable manifold at the $z=0$ plane. This visualization helps identify stable regions and the structure of the phase space flow.
+Figure \ref{fig:poincare} shows the Poincaré section of the stable manifold at the $z=0$ plane. A Poincaré map reduces the continuous flow of the dynamical system to a discrete map by recording the state of the system each time the trajectory intersects a transverse subspace (the section).
+
+Mathematically, if $\phi_t(x)$ is the flow of the system and $\Sigma$ is the section (here, $z=0$), the Poincaré map $P: \Sigma \to \Sigma$ is defined as $P(x) = \phi_{\tau(x)}(x)$, where $\tau(x)$ is the time of first return to $\Sigma$.
+
+In the context of the CR3BP, the Poincaré map allows us to visualize the complex topology of the invariant manifolds. The "tube" structure of the stable manifold is clearly visible in the $(x, \dot{x})$ projection. Trajectories inside this tube will asymptotically approach the Halo orbit, while those outside will drift away. This geometric insight is fundamental for targeting the specific region of phase space that leads to capture.
 
 \begin{figure}[H]
     \centering
@@ -106,13 +110,21 @@ Figure \ref{fig:poincare} shows the Poincaré section of the stable manifold at 
     \label{fig:poincare}
 \end{figure}
 
-\subsection{Formation Flying}
-We simulated a formation flying scenario involving a "Chief" spacecraft in the reference L1 Halo orbit and a "Deputy" spacecraft perturbed by 10 km in the x-direction. Figure \ref{fig:formation} illustrates the relative motion. Without active control, the Deputy drifts away, highlighting the need for station-keeping or formation control strategies.
+\subsection{Formation Control}
+We simulated a formation flying scenario involving a "Chief" spacecraft in the reference L1 Halo orbit and a "Deputy" spacecraft perturbed by 10 km in the x-direction. 
+
+To maintain the formation, we implemented a Linear Quadratic Regulator (LQR) control strategy. Since the CR3BP dynamics are nonlinear, we employed a State-Dependent Riccati Equation (SDRE) approach. At each time step, the system dynamics were linearized about the current state of the Chief spacecraft to obtain the instantaneous Jacobian matrix $A(t)$. The optimal control input $u(t) = -K(t) (x_d - x_c)$ was computed by solving the continuous algebraic Riccati equation:
+\begin{equation}
+    A^T P + P A - P B R^{-1} B^T P + Q = 0
+\end{equation}
+where $Q$ and $R$ are weighting matrices penalizing state error and control effort, respectively.
+
+Figure \ref{fig:formation} illustrates the results. The uncontrolled Deputy (red dashed line) naturally drifts away due to the unstable manifold dynamics. In contrast, the controlled Deputy (green solid line) successfully maintains the formation relative to the Chief. The relative distance plot confirms that the controller suppresses the drift, keeping the Deputy within a bounded distance.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{../results/formation_flying.png}
-    \caption{Formation flying simulation. Left: Trajectories of Chief (blue) and Deputy (red). Right: Relative distance over time, showing natural drift.}
+    \includegraphics[width=1.0\textwidth]{../results/formation_control.png}
+    \caption{Formation control simulation. Left: Trajectories of Chief (black), Uncontrolled Deputy (red), and Controlled Deputy (green). Right: Relative distance over time. The LQR controller effectively prevents the Deputy from drifting away.}
     \label{fig:formation}
 \end{figure}
 

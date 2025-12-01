@@ -13,7 +13,7 @@ import numpy as np
 from gekko import GEKKO
 from typing import Union
 
-from cislune.utils import load_config, Vector, integrate_simulator
+from cislune.core.utils import load_config, Vector, integrate_simulator
 
 config = load_config()
 

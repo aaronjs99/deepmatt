@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from scipy.special import legendre
 from gekko import GEKKO
 
-from cislune.utils import load_config, Vector, cn, eval_poly1d
+from cislune.core.utils import load_config, Vector, cn, eval_poly1d
 
 
 class HaloOrbit:

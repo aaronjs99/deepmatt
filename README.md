@@ -6,6 +6,18 @@ CisLune explores cislunar dynamics and control, offering a suite of scripts to:
 - Design and optimize station-keeping maneuvers  
 - Analyze dynamical stability and manifold structures  
 
+## Poincaré Maps
+
+A Poincaré map is a powerful tool for analyzing the dynamics of high-dimensional systems, such as the Circular Restricted Three-Body Problem (CR3BP). Instead of viewing the entire continuous trajectory in the 6D state space (position and velocity), we look at the intersection of the trajectory with a lower-dimensional subspace, called the Poincaré section.
+
+In this project, we use the $z=0$ plane as our section. Every time a trajectory crosses this plane (with $v_z$ having a specific sign, or both), we plot its state $(x, \dot{x})$.
+
+**Why is this useful?**
+1.  **Dimensionality Reduction**: It reduces the problem from continuous time to a discrete map, making it easier to visualize structure.
+2.  **Stability Analysis**: Fixed points on the map correspond to periodic orbits. The behavior of points near a fixed point reveals the stability of that orbit.
+3.  **Manifold Structure**: By plotting many trajectories on the stable manifold of a Halo orbit, we can see the "tube" structure that leads into the orbit. This is crucial for designing low-energy transfers.
+
+
 ## Repository Structure
 
 ```

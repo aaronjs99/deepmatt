@@ -15,11 +15,11 @@ from typing import Union
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from cislune.utils import load_config, Vector, integrate_simulator
+from cislune.core.utils import load_config, Vector, integrate_simulator
 
 import os
 # Try to find config file
-base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 config_path = os.path.join(base_dir, "config", "default.yaml")
 if not os.path.exists(config_path):
     # Fallback for when installed as package (if config is packaged)
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     plt.show()
 
 # --- Refactored Dynamics ---
-from cislune.params import mu
+from cislune.core.params import mu
 
 def cr3bp_dynamics(t, x, *args, **kwargs):
     """
@@ -207,6 +207,8 @@ def linearized_dynamics(x):
     # Simplified for collinear points (y=z=0) but full form needed generally
     # Using the form from stability.py
     
+    # Full Jacobian implementation
+    # Uxx
     A[3, 0] = (
         1
         - (1 - mu) / r1**3
@@ -214,6 +216,7 @@ def linearized_dynamics(x):
         - mu / r2**3
         + 3 * mu * (x[0] - 1 + mu) ** 2 / r2**5
     )
+    # Uyy
     A[4, 1] = (
         1
         - (1 - mu) / r1**3
@@ -221,15 +224,29 @@ def linearized_dynamics(x):
         - mu / r2**3
         + 3 * mu * x[1] ** 2 / r2**5
     )
+    # Uzz
     A[5, 2] = (
         -(1 - mu) / r1**3
         + 3 * (1 - mu) * x[2] ** 2 / r1**5
         - mu / r2**3
         + 3 * mu * x[2] ** 2 / r2**5
     )
-    # Note: Cross terms are non-zero if y, z != 0, but for Halo approximation often neglected or handled by full linearization
-    # The original code only had diagonal terms in the lower-left block.
-    # Let's keep it consistent with the original stability.py for now.
+    
+    # Cross terms Uxy, Uxz, Uyz
+    # Uxy = 3*(1-mu)*(x+mu)*y/r1^5 + 3*mu*(x-1+mu)*y/r2^5
+    Uxy = 3 * (1 - mu) * (x[0] + mu) * x[1] / r1**5 + 3 * mu * (x[0] - 1 + mu) * x[1] / r2**5
+    A[3, 1] = Uxy
+    A[4, 0] = Uxy
+    
+    # Uxz = 3*(1-mu)*(x+mu)*z/r1^5 + 3*mu*(x-1+mu)*z/r2^5
+    Uxz = 3 * (1 - mu) * (x[0] + mu) * x[2] / r1**5 + 3 * mu * (x[0] - 1 + mu) * x[2] / r2**5
+    A[3, 2] = Uxz
+    A[5, 0] = Uxz
+    
+    # Uyz = 3*(1-mu)*y*z/r1^5 + 3*mu*y*z/r2^5
+    Uyz = 3 * (1 - mu) * x[1] * x[2] / r1**5 + 3 * mu * x[1] * x[2] / r2**5
+    A[4, 2] = Uyz
+    A[5, 1] = Uyz
     
     return A
 

@@ -16,9 +16,9 @@ import scipy.optimize as opt
 import scipy.integrate as intg
 import matplotlib.pyplot as plt
 
-from cislune.params import mu, L1_HALO_INITIAL_STATE
-from cislune.gravdyn import cr3bp_dynamics as halo_dynamics, linearized_dynamics, get_stable_eigenvector
-from cislune.plotting import plot_trajectory_3d
+from cislune.core.params import mu, L1_HALO_INITIAL_STATE
+from cislune.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, linearized_dynamics, get_stable_eigenvector
+from cislune.core.plotting import plot_trajectory_3d
 
 save_orbit = False
 

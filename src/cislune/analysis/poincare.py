@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-from cislune.params import mu, L1_HALO_INITIAL_STATE
-from cislune.gravdyn import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
+from cislune.core.params import mu, L1_HALO_INITIAL_STATE
+from cislune.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, get_stable_eigenvector
 
 def poincare_map():
     print("Generating Poincaré Map...")

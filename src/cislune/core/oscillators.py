@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gekko import GEKKO
 
-from cislune.utils import *
+from cislune.core.utils import *
 
 
 def runVanDerPol():

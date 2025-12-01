@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from gekko import GEKKO
 import numpy as np
 
-from cislune.utils import *
+from cislune.core.utils import *
 
 
 def haloAccel(t, p, v, *args, **kwargs):
