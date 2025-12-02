@@ -220,6 +220,13 @@ def constant_formation_flight():
     plt.savefig("results/formation/robust_formation.png")
     plt.close()
     print("Saved plot to results/formation/robust_formation.png")
+
+    # Animation
+    from cislune.core.animator import animate_formation
+    print("Generating animation...")
+    chief_state = sol.y[6:12].T
+    deputy_states = [sol.y[12+i*6 : 12+(i+1)*6].T for i in range(len(agent_names))]
+    animate_formation(sol.t, chief_state, deputy_states, save_path="results/formation/formation_animation.gif")
     
     return sol
 

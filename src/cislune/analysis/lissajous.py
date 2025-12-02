@@ -58,7 +58,9 @@ def runLissajous():
     # ax.set_zlim([-500000000, 500000000])
     ax.view_init(30, 135)
     # plt.show()
-    plt.savefig("results/lissajous_3d.png")
+    # plt.show()
+    plt.savefig("results/analysis/lissajous_3d.png")
+    plt.close()
     plt.close()
 
     fig = plt.figure()
@@ -74,7 +76,9 @@ def runLissajous():
     ax.set_ylabel("Position")
     ax.legend()
     # plt.show()
-    plt.savefig("results/lissajous_pos.png")
+    # plt.show()
+    plt.savefig("results/analysis/lissajous_pos.png")
+    plt.close()
     plt.close()
 
     fig = plt.figure()
@@ -93,7 +97,9 @@ def runLissajous():
     ax.set_ylabel("Velocity")
     ax.legend()
     # plt.show()
-    plt.savefig("results/lissajous_vel.png")
+    # plt.show()
+    plt.savefig("results/analysis/lissajous_vel.png")
+    plt.close()
     plt.close()
 
 

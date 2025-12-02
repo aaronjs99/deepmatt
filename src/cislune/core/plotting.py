@@ -40,12 +40,19 @@ def plot_trajectory_3d(states, title, filename, show_earth=True, show_moon=True,
     ax.set_title(title)
     ax.legend()
     
-    # Ensure results directory exists
+    # Ensure directory exists
     import os
-    if not os.path.exists("results"):
-        os.makedirs("results")
+    
+    # If filename starts with results/, use it as is, otherwise prepend results/
+    if filename.startswith("results/"):
+        filepath = filename
+    else:
+        filepath = f"results/{filename}"
         
-    filepath = f"results/{filename}"
+    directory = os.path.dirname(filepath)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+        
     plt.savefig(filepath)
     plt.close()
     print(f"Saved plot to {filepath}")

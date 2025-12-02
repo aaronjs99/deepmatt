@@ -3,25 +3,24 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 
-from cislune.formation.rigid import constant_formation_flight
-
-def animate_formation():
+def animate_formation(t, chief_state, deputies_states, save_path="formation_animation.gif", fps=30):
+    """
+    Generates and saves a 3D animation of the formation flight.
+    
+    Args:
+        t (array): Time vector.
+        chief_state (array): (N, 6) array of chief state [x, y, z, vx, vy, vz].
+        deputies_states (list of arrays): List of (N, 6) arrays for each deputy.
+        save_path (str): Path to save the animation.
+        fps (int): Frames per second.
+    """
     print("Generating Formation Animation...")
     
-    # Run simulation to get data
-    sol = constant_formation_flight()
+    cx, cy, cz = chief_state[:, 0], chief_state[:, 1], chief_state[:, 2]
     
-    # Extract data
-    t = sol.t
-    # Chief: 6-8
-    cx, cy, cz = sol.y[6], sol.y[7], sol.y[8]
-    
-    agent_names = ["Deputy 1", "Deputy 2", "Officer 1", "Officer 2"]
     followers = []
-    for i in range(4):
-        idx = 12 + i*6
-        fx, fy, fz = sol.y[idx], sol.y[idx+1], sol.y[idx+2]
-        followers.append((fx, fy, fz))
+    for dep in deputies_states:
+        followers.append((dep[:, 0], dep[:, 1], dep[:, 2]))
         
     # Setup Plot
     fig = plt.figure(figsize=(10, 8))
@@ -39,7 +38,7 @@ def animate_formation():
     ax.set_xlabel('X (Rotating)')
     ax.set_ylabel('Y (Rotating)')
     ax.set_zlabel('Z (Rotating)')
-    ax.set_title('Robust Formation Flight (Station Keeping + Collision Avoidance)')
+    ax.set_title('Formation Flight Animation')
     
     # Lines and Dots
     # Chief
@@ -49,11 +48,12 @@ def animate_formation():
     # Followers
     lines_f = []
     dots_f = []
-    colors = ['r', 'g', 'b', 'm']
+    colors = ['r', 'g', 'b', 'm', 'c', 'y']
     
-    for i, name in enumerate(agent_names):
-        l, = ax.plot([], [], [], color=colors[i], linestyle='--', linewidth=0.5, alpha=0.5)
-        d, = ax.plot([], [], [], color=colors[i], marker='o', label=name)
+    for i in range(len(followers)):
+        color = colors[i % len(colors)]
+        l, = ax.plot([], [], [], color=color, linestyle='--', linewidth=0.5, alpha=0.5)
+        d, = ax.plot([], [], [], color=color, marker='o', label=f'Deputy {i+1}')
         lines_f.append(l)
         dots_f.append(d)
         
@@ -61,7 +61,7 @@ def animate_formation():
     
     # Animation Function
     # Downsample for speed
-    skip = 5
+    skip = max(1, len(t) // (10 * fps)) # Approx 10 seconds duration
     num_frames = len(t) // skip
     
     def update(frame):
@@ -74,7 +74,7 @@ def animate_formation():
         dot_c.set_3d_properties([cz[idx]])
         
         # Update Followers
-        for i in range(4):
+        for i in range(len(followers)):
             fx, fy, fz = followers[i]
             lines_f[i].set_data(fx[:idx], fy[:idx])
             lines_f[i].set_3d_properties(fz[:idx])
@@ -83,15 +83,8 @@ def animate_formation():
             
         return line_c, dot_c, *lines_f, *dots_f
         
-    ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=20, blit=False)
+    ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=1000/fps, blit=False)
     
-    save_path = "results/formation/formation_animation.gif"
-    print(f"Saving animation to {save_path} (this might take a while)...")
-    ani.save(save_path, writer='pillow', fps=30)
+    print(f"Saving animation to {save_path}...")
+    ani.save(save_path, writer='pillow', fps=fps)
     print("Animation saved!")
-
-def main():
-    animate_formation()
-
-if __name__ == "__main__":
-    main()

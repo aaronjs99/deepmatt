@@ -14,3 +14,7 @@ L1_HALO_INITIAL_STATE = [
 # Celestial Body Positions (Dimensionless)
 EARTH_POS = [-mu, 0, 0]
 MOON_POS = [1 - mu, 0, 0]
+
+# Characteristic Quantities
+L_star = 384400.0  # Characteristic length (km)
+T_star = 375200.0  # Characteristic time (s)

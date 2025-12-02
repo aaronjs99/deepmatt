@@ -207,7 +207,9 @@ def main():
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    plt.savefig("results/stability_3d.png")
+    ax.set_zlabel("Z")
+    plt.savefig("results/analysis/stability_3d.png")
+    plt.close()
     plt.close()
 
 

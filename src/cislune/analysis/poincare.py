@@ -57,9 +57,10 @@ def poincare_map():
         plt.ylabel('vx (dimensionless)')
         plt.title('Poincaré Map (z=0 Section) of Stable Manifold')
         plt.grid(True, alpha=0.3)
-        plt.savefig("results/poincare_map.png", dpi=300)
+        plt.grid(True, alpha=0.3)
+        plt.savefig("results/poincare/poincare_map.png", dpi=300)
         plt.close()
-        print("Saved Poincaré map to results/poincare_map.png")
+        print("Saved Poincaré map to results/poincare/poincare_map.png")
     else:
         print("No intersections found.")
 

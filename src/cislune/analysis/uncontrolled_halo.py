@@ -15,103 +15,19 @@ from gekko import GEKKO
 import numpy as np
 
 from cislune.core.utils import *
+from cislune.dynamics.cr3bp import cr3bp_dynamics
+from cislune.core.params import mu
 
-
-def haloAccel(t, p, v, *args, **kwargs):
-    gamma = kwargs["gamma"]
-    L_type = kwargs["L_type"]
-    mu = kwargs["mu"]
-    linearity = False
-    richardson = True
-
-    c2 = cn(2, gamma, L_type, mu)
-    if "m" in kwargs:
-        m = kwargs["m"]
-        rho = m.sqrt(p.x**2 + p.y**2 + p.z**2)
-    else:
-        rho = np.sqrt(p.x**2 + p.y**2 + p.z**2)
-
-    polyp = [legendre(n) for n in range(3, 12)]
-    polyd = [polyp[i].deriv() for i in range(len(polyp))]
-    Pnlist = [eval_poly1d(polyp[i].coefficients, p.x / rho) for i in range(len(polyp))]
-    Pdlist = [eval_poly1d(polyd[i].coefficients, p.x / rho) for i in range(len(polyd))]
-
-    aX_lin = 2 * v.y + (2 * c2 + 1) * p.x
-    aY_lin = -2 * v.x + (-c2 + 1) * p.y
-    aZ_lin = -c2 * p.z
-
-    if linearity:
-        aX_nonlin = 0.0
-        aY_nonlin = 0.0
-        aZ_nonlin = 0.0
-    else:
-        if richardson:
-            aX_nonlin = 1.5 * cn(3, gamma, L_type, mu) * (
-                2 * (p.x**2) - (p.y**2) - (p.z**2)
-            ) + 2.0 * cn(4, gamma, L_type, mu) * p.x * (
-                2 * (p.x**2) - 3 * (p.y**2) - 3 * (p.z**2)
-            )
-            aY_nonlin = -3.0 * cn(3, gamma, L_type, mu) * (p.x * p.y) + -1.5 * cn(
-                4, gamma, L_type, mu
-            ) * p.y * (4 * (p.x**2) - (p.y**2) - (p.z**2))
-            aZ_nonlin = -3.0 * cn(3, gamma, L_type, mu) * (p.x * p.z) + -1.5 * cn(
-                4, gamma, L_type, mu
-            ) * p.z * (4 * (p.x**2) - (p.y**2) - (p.z**2))
-        else:
-            aX_nonlin = np.sum(
-                [
-                    cn(n, gamma, L_type, mu)
-                    * (
-                        n * rho ** (n - 1) * (p.x / rho) * Pnlist[n - 3]
-                        + rho ** (n)
-                        * ((1 / rho) - ((p.x * p.x) / (rho**3)))
-                        * Pdlist[n - 3]
-                    )
-                    for n in range(3, len(polyp) + 3)
-                ]
-            )
-            aY_nonlin = np.sum(
-                [
-                    cn(n, gamma, L_type, mu)
-                    * (
-                        n * rho ** (n - 1) * (p.y / rho) * Pnlist[n - 3]
-                        + rho ** (n) * (-((p.x * p.y) / (rho**3))) * Pdlist[n - 3]
-                    )
-                    for n in range(3, len(polyp) + 3)
-                ]
-            )
-            aZ_nonlin = np.sum(
-                [
-                    cn(n, gamma, L_type, mu)
-                    * (
-                        n * rho ** (n - 1) * (p.z / rho) * Pnlist[n - 3]
-                        + rho ** (n) * (-((p.x * p.z) / (rho**3))) * Pdlist[n - 3]
-                    )
-                    for n in range(3, len(polyp) + 3)
-                ]
-            )
-
-    return [aX_lin + aX_nonlin, aY_lin + aY_nonlin, aZ_lin + aZ_nonlin]
-
-
+# Initial Guess Parameters (L1 Halo Family)
+# These provide a good starting point for the optimizer
 M_E = 5.97219e24
 M_S = 1.98847e30
 mu_ES = M_E / (M_E + M_S)
 gamma = 1.001090475e-2
-
-l1 = -15.965031400
-l2 = 1.7409008000
-Delta = 0.29221444425
-
 c2 = cn(2, gamma, 1, mu_ES)
-
 wp = np.sqrt((2 - c2 + np.sqrt(9 * c2 * c2 - 8 * c2)) / 2)
-wv = np.sqrt(c2)
-Lambda = np.sqrt((c2 - 2 + np.sqrt(9 * c2 * c2 - 8 * c2)) / 2)
 kappa = (wp * wp + 1 + 2 * c2) / (2 * wp)
 
-# Ax = 0.100
-# Az = 0.100
 Ax = 0.1 * 206000000 / 110000000
 Az = 0.1 * 110000000 / 110000000
 Ay = kappa * Ax
@@ -125,7 +41,11 @@ def runHalo(timeRange):
 
     for time_step in range(num_steps):
         time = t_0 + time_step * dt
-        acc = haloAccel(time, pos, vel, gamma=gamma, L_type=1, mu=mu_ES)
+        
+        # Construct state
+        state = [pos.x, pos.y, pos.z, vel.x, vel.y, vel.z]
+        derivs = cr3bp_dynamics(time, state)
+        acc = derivs[3:]
 
         vel.x += acc[0] * dt
         vel.y += acc[1] * dt
@@ -175,22 +95,15 @@ def optimizeHalo(initPos, initVel, timeRange, periodicity_time, *args, **kwargs)
         pos[i].value = [initPos.x, initPos.y, initPos.z][i]
         vel[i].value = [initVel.x, initVel.y, initVel.z][i]
 
+    # Call dynamics once
+    state = [pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]]
+    derivs = cr3bp_dynamics(time, state, m=m)
+    
     for i in range(3):
         m.delay(pos[i], posd[i], periodicity_time)
         m.delay(vel[i], veld[i], periodicity_time)
         m.Equation(pos[i].dt() == vel[i])
-        m.Equation(
-            vel[i].dt()
-            == haloAccel(
-                time,
-                Vector(pos[0], pos[1], pos[2]),
-                Vector(vel[0], vel[1], vel[2]),
-                gamma=gamma,
-                L_type=1,
-                mu=mu_ES,
-                m=m,
-            )[i]
-        )
+        m.Equation(vel[i].dt() == derivs[3+i])
 
     m.options.IMODE = 9
     m.options.MAX_ITER = 3000
@@ -272,7 +185,11 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
     # plt.show()
-    plt.savefig("results/uncontrolled_halo_3d.png")
+    # plt.show()
+    plt.savefig("results/analysis/uncontrolled_halo_3d.png")
+    plt.close()
+
+    fig = plt.figure()
     plt.close()
 
     fig = plt.figure()
@@ -294,7 +211,11 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_xlabel("Time")
     ax.set_ylabel("Error")
     # plt.show()
-    plt.savefig("results/uncontrolled_halo_error.png")
+    # plt.show()
+    plt.savefig("results/analysis/uncontrolled_halo_error.png")
+    plt.close()
+
+    fig = plt.figure()
     plt.close()
 
     fig = plt.figure()
@@ -307,7 +228,11 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_ylabel("Position")
     ax.legend()
     # plt.show()
-    plt.savefig("results/uncontrolled_halo_pos.png")
+    # plt.show()
+    plt.savefig("results/analysis/uncontrolled_halo_pos.png")
+    plt.close()
+
+    fig = plt.figure()
     plt.close()
 
     fig = plt.figure()
@@ -319,7 +244,9 @@ def plotter(allTime, allPos, allVel, allPosd, allVeld, fig=None):
     ax.set_ylabel("Velocity")
     ax.legend()
     # plt.show()
-    plt.savefig("results/uncontrolled_halo_vel.png")
+    # plt.show()
+    plt.savefig("results/analysis/uncontrolled_halo_vel.png")
+    plt.close()
     plt.close()
 
 
