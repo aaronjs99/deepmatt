@@ -24,22 +24,21 @@ In this project, we use the $z=0$ plane as our section. Every time a trajectory 
 .
 ├── config/
 │   └── default.yaml          # Simulation configuration files
-├── data/                     # Sample data files (e.g., halo_orbit_points.csv)
+├── data/                     # Sample data files
+├── models/                   # Trained RL models (PPO, Transformer)
+├── paper/                    # LaTeX source for the conference paper
 ├── results/                  # Output directory for plots, logs, animations
 ├── src/cislune/              # Core modules
-│   ├── adversary.py          # Optimal control “chase” problem
-│   ├── controlled-halo.py    # Controlled halo orbit integration & optimization
-│   ├── gravdyn.py            # Gravitational dynamics & GEKKO simulator
-│   ├── lissajous.py          # Lissajous orbit point generation
-│   ├── littdyn.py            # Linearized–plus–full dynamics simulator
-│   ├── oscillators.py        # Nonlinear oscillator examples (van der Pol, Duffing)
-│   ├── params.py             # Physical constants & Lagrange points
-│   ├── stability.py          # Stability analysis (halo manifold sampling)
-│   ├── stationkeeping.py     # Station-keeping MPC for halo orbits
-│   ├── uncontrolled-halo.py  # Uncontrolled halo orbit simulation
-│   ├── utils.py              # Vector class & integrator utility
-├── tests/                    # Unit tests (to add)
-├── run.py                    # Entry point for demos
+│   ├── analysis/             # Analysis scripts (halo, lissajous, stability, transfer)
+│   ├── cli.py                # Main CLI entry point
+│   ├── core/                 # Core utilities (animator, plotting, params)
+│   ├── dynamics/             # CR3BP dynamics implementation
+│   ├── formation/            # Formation flying logic
+│   ├── gnc/                  # Guidance, Navigation, and Control (EKF, LQR, SDRE)
+│   ├── learning/             # Deep RL and Transformer agents
+│   └── validation/           # Benchmarking and validation scripts
+├── tests/                    # Unit tests
+├── run.py                    # Wrapper for the CLI
 ├── pyproject.toml
 ├── .gitignore
 ├── README.md
@@ -62,46 +61,45 @@ conda activate cislune
 # Install in editable mode
 pip install -e .
 
-# (Optional) Install development dependencies
-pip install -e .[dev]
+# Install dependencies
+pip install numpy scipy matplotlib gekko stable-baselines3 gymnasium torch tensorboard
 ```
 
 ## Usage
 
-Run a quick demo of the halo orbit integrator:
+The project uses a unified CLI. You can run different modes using `run.py`.
 
+### 1. Generate All Results (Paper Reproduction)
+To generate all plots and animations used in the paper:
 ```bash
-python run.py --mode halo               # uses controlled-halo.py
+python run.py --mode generate_results
 ```
+This will populate the `results/` directory with:
+- `results/analysis/`: Halo orbits, manifolds, transfers
+- `results/formation/`: Formation flying animations and plots
+- `results/validation/`: Monte Carlo and benchmark plots
 
-For other demos:
-
-- **Lissajous points:**  
+### 2. Run Specific Modules
+- **Halo Orbit Analysis:**
   ```bash
-  python run.py --mode lissajous        # uses src/lissajous.py
+  python run.py --mode halo
   ```
-- **Stability sampling:**  
+- **Lissajous Orbits:**
   ```bash
-  python run.py --mode stability        # uses src/stability.py
+  python run.py --mode lissajous
   ```
-- **Station-keeping MPC:**  
+- **Stability Analysis:**
   ```bash
-  python run.py --mode stationkeeping   # uses src/stationkeeping.py
+  python run.py --mode stability
   ```
-- **Manifold Transfer (Research):**
+- **Formation Flying Simulation:**
   ```bash
-  python run.py --mode transfer         # uses src/transfer.py
+  python run.py --mode formation
   ```
-
-Output plots, CSVs, and animations will appear under `results/`.
-
-## Known Issues
-- The `stationkeeping` mode may fail to converge with the default solver settings.
-- `controlled_halo` mode uses the IPOPT solver for better stability.
 
 ## Testing
 
-Add and run unit tests via **pytest**:
+Run unit tests via **pytest**:
 
 ```bash
 pytest tests/ -v

@@ -1,0 +1,3 @@
+SDRE: 0.6645 ms
+PPO: 0.1362 ms
+Transformer: 1.5784 ms
