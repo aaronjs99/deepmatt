@@ -20,12 +20,12 @@
 \citation{gim2003ekf}
 \citation{damico2006adaptive}
 \citation{karlgaard2006asekf}
+\citation{psiaki2023fusion}
 \@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Formation Flying Control in Libration Point Orbits}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Cislunar Orbit Control and Station Keeping}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}CR3BP Dynamics and Trajectory Optimization}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Extended Kalman Filtering for Relative Navigation}{2}{}\protected@file@percent }
-\citation{psiaki2023fusion}
 \citation{cloutier1997sdre,mracek1998sdre}
 \citation{cimen2012sdre}
 \citation{xin2011sdre}
@@ -53,8 +53,8 @@
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Guidance: Natural Formation Design}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Monodromy Matrix and Stability Analysis}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Center Manifold Initialization}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Numerical Continuation and Targeting}{4}{}\protected@file@percent }
 \citation{cloutier1997sdre}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Numerical Continuation and Targeting}{5}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {V}Navigation: Extended Kalman Filter}{5}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Prediction Step}{5}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Update Step}{5}{}\protected@file@percent }
@@ -65,20 +65,26 @@
 \citation{schulman2017proximal}
 \citation{vaswani2017attention}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Stability Analysis}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Lyapunov Stability Theorem}{6}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VII}Learning-Based Control: Deep RL}{6}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Problem Formulation}{6}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}Proximal Policy Optimization (PPO)}{6}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Transformer-Based Guidance}{6}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {VIII}Results}{6}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Monte Carlo Statistical Validation}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Results}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Monte Carlo Statistical Validation}{7}{}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Monte Carlo Results (100 Trials)}}{7}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Learning-Based GNC Performance}{7}{}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Benchmark comparison of Fuel Consumption and Tracking Error. The Hybrid approach significantly outperforms the baseline PPO.}}{7}{}\protected@file@percent }
 \newlabel{fig:hybrid_bench}{{1}{7}{}{figure.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-C}}Controller Benchmarking}{7}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Controller Performance Comparison}}{7}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-D}}Failure Mode Analysis}{7}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-E}}Computational Complexity}{7}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Controller Performance Comparison}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-D}}Failure Mode Analysis}{8}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Failure Mode Recovery (Injection at $t=1.0$)}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-E}}Computational Complexity}{8}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Computational Benchmark (Inference Time)}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-F}}Mission Architecture}{8}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces End-to-End Mission Delta-V Budget}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-G}}Computational Complexity Analysis}{8}{}\protected@file@percent }
 \citation{zhang2024eventtriggered,malyuta2023fastmpc}
 \citation{federici2023drl,alqurashi2024scalable}
 \citation{kramer2023starling,stanford2024starfox}
@@ -91,13 +97,6 @@
 \bibcite{wong2002lqr}{5}
 \bibcite{chen2023distributed}{6}
 \bibcite{liu2023prescribed}{7}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Failure Mode Recovery (Injection at $t=1.0$)}}{8}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Computational Benchmark (Inference Time)}}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-F}}Mission Architecture}{8}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces End-to-End Mission Delta-V Budget}}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion and Future Work}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{8}{}\protected@file@percent }
 \bibcite{sabatini2024testing}{8}
 \bibcite{whitley2023capstone}{9}
 \bibcite{howell2022capstone}{10}
@@ -114,6 +113,9 @@
 \bibcite{gim2003ekf}{21}
 \bibcite{damico2006adaptive}{22}
 \bibcite{karlgaard2006asekf}{23}
+\@writefile{toc}{\contentsline {section}{\numberline {IX}Discussion}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {X}Conclusion and Future Work}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{9}{}\protected@file@percent }
 \bibcite{psiaki2023fusion}{24}
 \bibcite{cloutier1997sdre}{25}
 \bibcite{mracek1998sdre}{26}
@@ -135,4 +137,4 @@
 \bibcite{schulman2017proximal}{42}
 \bibcite{vaswani2017attention}{43}
 \bibcite{schaub2014analytical}{44}
-\gdef \@abspage@last{9}
+\gdef \@abspage@last{10}
