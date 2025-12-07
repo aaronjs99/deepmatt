@@ -8,6 +8,18 @@
 \usepackage{setspace}
 \doublespacing
 
+% Reduce whitespace by relaxing float limits
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\setcounter{dbltopnumber}{2}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.7}
+\renewcommand{\dblfloatpagefraction}{0.7}
+
 % AIAA-style formatting
 \usepackage{times}
 \usepackage{algorithm}
@@ -150,7 +162,7 @@ where $(x,y,z)$ are the spacecraft coordinates in the rotating frame.
 
 These distance formulas use the Pythagorean theorem in three dimensions, measuring the straight-line distance from the spacecraft's position $(x, y, z)$ to each primary body's location.
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{assets/lagrange_halo.png}
     \caption{Earth-Moon system showing L1 and L2 Lagrange points with an example L2 Halo orbit. The Lagrange points are equilibrium locations where gravitational and centrifugal forces balance in the rotating frame.}
@@ -215,7 +227,7 @@ where $A(t)$ is the Jacobian matrix from Eq.~\ref{eq:linearized} and the initial
 \end{equation}
 The Monodromy matrix is profoundly important because its eigenvalues reveal the orbit's stability character. The eigenvalues, denoted by $\lambda_i$ for $i=1,\dots,6$, must satisfy a reciprocal pairing property due to the Hamiltonian structure of the CR3BP: if $\lambda$ is an eigenvalue, then so is $1/\lambda$. This pairing theorem, derived from symplectic geometry, means eigenvalues come in specific patterns.  For typical L1 or L2 Halo orbits, the six eigenvalues consist of one stable mode ($|\lambda_s| < 1$) paired with one unstable mode ($|\lambda_u| = 1/\lambda_s > 1$), two neutral modes ($|\lambda| = 1$) associated with periodicity and energy conservation, and two center modes forming a complex conjugate pair on the unit circle ($\lambda_{c}, \bar{\lambda}_{c} = e^{\pm i \nu}$). Figure~\ref{fig:monodromy} illustrates this eigenvalue structure on the complex plane, where the unit circle divides stable (inside) from unstable (outside) behavior.
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.75\linewidth]{assets/monodromy_eigenvalues.png}
     \caption{Monodromy matrix eigenvalues for an L2 Halo orbit plotted on the complex plane. Eigenvalues on the unit circle (green) correspond to center modes with bounded oscillatory motion. Eigenvalues inside the circle (blue) indicate stable decay, while those outside (red) show exponential growth. \textbf{Key insight:} The center modes (unit circle) are the ``sweet spot'' for formation flying--they neither grow nor decay.}
@@ -232,7 +244,7 @@ where $c_1$ and $c_2$ are scaling coefficients that determine the size of the fo
 \subsection{Numerical Continuation and Targeting}
 While the linear analysis provides a good initial guess, the full nonlinear dynamics require a differential correction process to close the relative orbit. We employ a single-shooting algorithm to refine the initial state, formalized in Algorithm~\ref{alg:manifold_targeting}.
 
-\begin{algorithm}[htbp]
+\begin{algorithm}[!htbp]
 \caption{Differential Correction for Center Manifold Targeting}
 \label{alg:manifold_targeting}
 \begin{algorithmic}[1]
@@ -259,7 +271,7 @@ In practice, convergence is achieved in $3-5$ iterations for typical L1 Halo orb
 
 For the specific L1 Halo orbit used in this study ($T = 3.0$ non-dimensional time units), we identified the center mode eigenvectors. Initializing the deputy spacecraft along these directions results in a quasi-periodic relative orbit that remains bounded in the vicinity of the chief. This ``natural'' formation design minimizes the need for station-keeping maneuvers, as demonstrated by the \textbf{ten-fold fuel reduction} (2.6 m/s vs. 0.86 m/s for rigid formations) observed in our results. Figure~\ref{fig:formation_traj} shows an example natural formation trajectory, where the deputy spacecraft traces out a bounded, quasi-periodic path relative to the chief over multiple orbital periods, requiring minimal control intervention.
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{assets/formation_trajectory.png}
     \caption{Natural formation trajectory showing quasi-periodic relative motion on the center manifold. The deputy spacecraft (blue) maintains bounded motion around the chief (gold star) without continuous control. \textbf{Key insight:} This ``natural parking orbit'' persists indefinitely with zero fuel in the ideal case.}
@@ -462,7 +474,7 @@ Final Estimation Error & 1.62 $\pm$ 0.73 & km \\
 \end{tabularx}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.95\linewidth]{assets/monte_carlo_distribution.png}
     \caption{Monte Carlo statistical validation showing distribution of fuel consumption and final position errors across 100 trials. \textbf{Key insight:} The tight clustering demonstrates that our architecture delivers consistent performance--not just good on average, but reliably good every time.}
@@ -472,7 +484,7 @@ Final Estimation Error & 1.62 $\pm$ 0.73 & km \\
 \subsection{Learning-Based GNC Performance}
 We evaluated the proposed Hybrid GNC architecture (Transformer Guidance + PPO Control) against the baseline PPO and SDRE approaches. The results demonstrate the ``super optimal'' performance achieved by blending global manifold awareness with local control policies (Figure~\ref{fig:hybrid_bench}).
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{assets/hybrid_benchmark.png}
     \caption{Benchmark comparison of Fuel Consumption and Tracking Error. The Hybrid approach significantly outperforms the baseline PPO.}
@@ -484,7 +496,7 @@ The Hybrid agent achieves a fuel consumption of 452.3 (non-dimensional), a 22\% 
 \subsection{Ablation Study: The Role of Attention}
 To isolate the contribution of the Transformer architecture, we compared the learning efficiency of our attention-augmented agent against a standard PPO baseline (SOTA RL). Figure~\ref{fig:learning_efficiency} illustrates the training progression. The Transformer-guided agent converges to the global optimum ($\approx -450$ return) in fewer than 400 episodes, leveraging its ability to "attend" to the underlying manifold structure. In contrast, the standard PPO agent (blind to the global topology) gets stuck in local minima with significantly higher variance and suboptimal fuel efficiency ($\approx -700$ return).
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.95\linewidth]{assets/learning_efficiency.png}
     \caption{Learning efficiency comparison. The Transformer-Guided approach (Blue) converges rapidly to a lower cost floor, while the standard PPO baseline (Red) struggles with the chaotic dynamics, settling for a suboptimal policy. This validates the hypothesis that attention mechanisms are essential for capturing the complex temporal dependencies of Halo orbit dynamics.}
@@ -494,7 +506,7 @@ To isolate the contribution of the Transformer architecture, we compared the lea
 \subsection{Controller Benchmarking}
 We compared the performance of our SDRE-LQR controller against two baselines: an optimized high-gain PD controller and a Sliding Mode Controller (SMC). The results in Table~\ref{tab:controller_comparison} highlight the distinct advantages of the SDRE approach. While a high-gain PD controller can achieve comparable tracking accuracy ($<0.2$ km) by essentially overpowering the natural dynamics with high-frequency thrusting, this ``brute force'' approach comes at a prohibitive cost: the PD baseline consumes nearly \textbf{300 times more fuel} than the SDRE controller (8.52 m/s vs 0.03 m/s). This chattering behavior, visualized in Figure~\ref{fig:controller_comp}, would rapidly deplete the propellant budget of a small spacecraft. In contrast, the SDRE controller exploits the natural flow of the center manifold, achieving superior accuracy with minimal control effort.
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{assets/controller_comparison.png}
     \caption{Controller performance comparison showing exponential convergence of SDRE-LQR versus oscillatory divergence of PD baseline. The SDRE controller quickly stabilizes to near-zero error while the PD controller exhibits large persistent oscillations.}
