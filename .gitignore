@@ -149,3 +149,8 @@ paper/*.fdb_latexmk
 paper/*.synctex.gz
 paper/*.bbl
 paper/*.blg
+
+# TensorBoard logs
+*_tensorboard/
+tensorboard/
+logs/

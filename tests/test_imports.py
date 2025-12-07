@@ -1,18 +1,22 @@
 import pytest
-import cislune
+
 
 def test_imports():
-    from cislune import adversary
-    from cislune import controlled_halo
-    from cislune import gravdyn
-    from cislune import halo
-    from cislune import lissajous
-    from cislune import littdyn
-    from cislune import oscillators
-    from cislune import params
-    from cislune import stability
-    from cislune import stationkeeping
-    from cislune import uncontrolled_halo
-    from cislune import utils
-    
+    """Test that all core deepmatt modules can be imported."""
+    from deepmatt.core import params
+    from deepmatt.core import utils
+    from deepmatt.core import plotting
+    from deepmatt.dynamics import cr3bp
+    from deepmatt.gnc import navigation
+    from deepmatt.gnc.control import SDREController
+    from deepmatt.learning import ppo_agent
+    from deepmatt.learning import transformer_guidance
+
     assert True
+
+
+def test_cli():
+    """Test that CLI can be imported."""
+    from deepmatt.cli import main
+
+    assert callable(main)

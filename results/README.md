@@ -1,6 +1,6 @@
-# Cislunar Orbit Simulation Results
+# DeepMAtt Simulation Results
 
-This directory contains the output plots and data from the `cislune` simulation package.
+This directory contains the output plots and data from the `deepmatt` simulation package.
 
 ## Orbit Simulations
 - **`uncontrolled_halo_3d.png`**: Visualization of a natural L1 Halo orbit. Note the instability causing the spacecraft to depart the vicinity of L1 over time.
