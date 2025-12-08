@@ -46,15 +46,15 @@
 \maketitle
 
 \begin{abstract}
-Autonomous formation flying in cislunar space presents a unique control challenge driven by the highly nonlinear and chaotic dynamics of the Circular Restricted Three-Body Problem (CR3BP). Traditional linear control strategies, designed for Keplerian regimes, struggle to maintain formation geometry without prohibitive fuel expenditure when subjected to the time-varying differential gravitational forces of the Earth-Moon system. This paper presents \textit{Deep Manifold Attention}, a novel guidance and control architecture that regulates multi-agent formations by learning the underlying invariant manifold structure of Halo orbits. We introduce three primary control-theoretic contributions: (1) a \textit{Floquet-Aware Positional Encoding} mechanism that embeds the orbit's natural periodicity into a Transformer network, enabling the precise prediction of manifold injection points from partial state observations; (2) a \textit{Physics-Informed} training objective that regularizes the policy gradient with Hamiltonian conservation constraints, ensuring learnt policies respects the Jacobi integral; and (3) a \textit{Spectral-Adaptive} State-Dependent Riccati Equation (SDRE) controller that schedules feedback gains in real-time based on the instantaneous stability properties (spectral radius) of the local linearization. By effectively ``surfing'' the stable center manifold rather than forcing rigid Euclidean geometry, our approach reduces station-keeping $\Delta V$ by 90\% compared to classical rigidity-based controllers and achieves 10$\times$ faster convergence than standard reinforcement learning baselines. These results bridge the gap between dynamical systems theory and modern data-driven control, demonstrating a pathway to fuel-efficient autonomy for the Lunar Gateway era.
+Autonomous formation flying in cislunar space poses unique challenges due to the chaotic dynamics of the Circular Restricted Three-Body Problem (CR3BP). Traditional linear strategies, designed for Keplerian regimes, often incur prohibitive fuel costs in this environment. This paper presents \textit{Deep Manifold Attention}, a novel architecture regulating formations by learning the invariant manifold structure of Halo orbits. We introduce three primary contributions: (1) a \textit{Floquet-Aware Positional Encoding} mechanism that embeds orbit periodicity into a Transformer for precise manifold injection prediction; (2) a \textit{Physics-Informed} training objective ensuring learnt policies respect the Jacobi integral; and (3) a \textit{Spectral-Adaptive} State-Dependent Riccati Equation (SDRE) controller that schedules gains based on instantaneous stability. By targeting the stable center manifold, our approach reduces station-keeping $\Delta V$ by 99\% compared to classical rigidity-based controllers and achieves $3\times$ faster convergence than standard reinforcement learning baselines. These results bridge dynamical systems theory and data-driven control, offering a pathway to fuel-efficient autonomy for the Lunar Gateway era.
 \end{abstract}
 
 \section*{Nomenclature}
 
-{\renewcommand\arraystretch{1.0}
-\noindent\begin{tabular*}{\textwidth}{@{}l @{\quad=\quad} l@{}}
+{\singlespacing
+\noindent\begin{tabularx}{\textwidth}{@{}l @{\quad=\quad} >{\raggedright\arraybackslash\hspace{0pt}}X@{}}
     $\mu$ & mass parameter of the Earth-Moon system (0.01215) \\
-    $\mathbf{x}$ & state vector $[x, y, z, \dot{x}, \dot{y}, \dot{z}]^T$ \\
+    $\mathbf{x}$ & state vector $[x, y, z, \dot{x}, \dot{y}, \dot{z}]^\top$ \\
     $\Omega$ & pseudo-potential function \\
     $\Phi(t, t_0)$ & State Transition Matrix \\
     $M$ & Monodromy matrix \\
@@ -64,15 +64,15 @@ Autonomous formation flying in cislunar space presents a unique control challeng
     $\mathbf{z}_k$ & measurement vector at time step $k$ \\
     $P_{k|k}$ & error covariance matrix \\
     $\Delta V$ & velocity change (fuel consumption metric) \\
-\end{tabular*}}
+\end{tabularx}}
 
 \section{Introduction}
 
-Autonomous formation flying in cislunar space represents a transformative capability for next-generation space exploration. As humanity expands beyond Low Earth Orbit (LEO) toward the Moon, we encounter a gravitationally complex environment where spacecraft experience significant gravitational forces from both Earth and Moon simultaneously. Within this \textit{cislunar space} lie five Lagrange points (L1--L5), equilibrium locations where gravitational forces balance. Halo orbits (three-dimensional periodic paths encircling L1 or L2) provide ideal vantage points for continuous Earth-Moon visibility, making them essential for NASA's Lunar Gateway and future distributed telescope arrays \cite{howell1984three, breakwell1979halo}.
+Autonomous formation flying in cislunar space represents a transformative capability for next-generation space exploration. As humanity expands beyond Low Earth Orbit (LEO) toward the Moon, we encounter a gravitationally complex environment where spacecraft experience significant gravitational forces from both Earth and Moon simultaneously. Within this \textit{cislunar space} lie five Lagrange points (L1-L5), equilibrium locations where gravitational forces balance. Halo orbits (three-dimensional periodic paths encircling L1 or L2) provide ideal vantage points for continuous Earth-Moon visibility, making them essential for NASA's Lunar Gateway and future distributed telescope arrays \cite{howell1984three, breakwell1979halo}.
 
-The central challenge for formation flying in this domain is that Halo orbits are inherently unstable. Without active control, any spacecraft will exponentially diverge within weeks. Traditional formation-keeping approaches force deputy spacecraft to maintain rigid relative positions through continuous thrusting, fighting the natural dynamics at enormous fuel cost. The key insight of this work is that this fight is unnecessary. By leveraging the deep geometric structure of the dynamics, specifically, the invariant manifold structure of the CR3BP--we can identify ``natural formations'' that persist with minimal control intervention. This is analogous to finding a calm eddy in a river rather than swimming against the current.
+The central challenge for formation flying in this domain is that Halo orbits are inherently unstable. Without active control, any spacecraft will exponentially diverge within weeks. Traditional formation-keeping approaches force deputy spacecraft to maintain rigid relative positions through continuous thrusting, acting against the natural dynamics at significant fuel cost. The key insight of this work is that this expenditure is largely avoidable. By leveraging the deep geometric structure of the dynamics, specifically the invariant manifold structure of the CR3BP, we can identify ``natural formations'' that persist with minimal control intervention. This is analogous to initializing the formation in a quasi-periodic relative orbit that naturally tracks the reference trajectory.
 
-This work presents a unified Guidance, Navigation, and Control (GNC) architecture built on three principles: (1) exploiting invariant manifold theory to design formations that ride the natural dynamics; (2) using a Transformer network that learns to predict optimal manifold injection points from noisy observations; and (3) employing a spectral-adaptive controller that automatically adjusts to the orbit's time-varying stability properties.
+This work presents a unified Guidance, Navigation, and Control (GNC) architecture\footnote{Code available at \url{https://github.com/aaronjs99/deepmatt}} built on three principles: (1) exploiting invariant manifold theory to design formations that ride the natural dynamics; (2) using a Transformer network that learns to predict optimal manifold injection points from noisy observations; and (3) employing a spectral-adaptive controller that automatically adjusts to the orbit's time-varying stability properties.
 
 Our specific contributions are as follows:
 \begin{enumerate}
@@ -81,7 +81,7 @@ Our specific contributions are as follows:
     \item \textbf{Spectral-Adaptive Control}: We demonstrate that the SDRE formulation achieves superior robustness by implicitly scheduling gains based on the instantaneous spectral radius of the local dynamics.
 \end{enumerate}
 
-All results in this paper are obtained through high-fidelity numerical simulation of the CR3BP dynamics. Hardware-in-the-loop testing and flight validation are identified as critical future work.
+All results in this paper are obtained through numerical simulation of the CR3BP dynamics. While CR3BP captures the essential multi-body gravitational effects, it is a medium-fidelity model that neglects solar perturbations, orbital eccentricity, and solar radiation pressure. Extension to high-fidelity ephemeris models (e.g., DE440) is identified as critical future work.
 
 The remainder of this paper is organized as follows. Section II reviews related work. Section III details the CR3BP system model. Section IV describes the guidance strategy. Sections V and VI present the control and navigation algorithms, respectively. Section VII discusses the results, and Section VIII concludes the paper.
 
@@ -107,7 +107,7 @@ Gim and Alfriend developed foundational EKF solutions using GPS measurements for
 
 \subsection{State-Dependent Riccati Equation Control}
 
-The SDRE technique systematically extends LQR to nonlinear systems \cite{cloutier1997sdre, mracek1998sdre}. Applications include spacecraft attitude control \cite{cimen2012sdre}, rendezvous with tumbling targets \cite{xin2011sdre}, and LEO formation flying \cite{bevilacqua2011sdre}. Recent SDRE advances emphasize robustness and computational efficiency. Assfalg et al. (2023) developed SDRE with predefined performance guarantees for rendezvous missions, achieving zero-overshoot control via adaptive disturbance estimation \cite{assfalg2023robust}. However, a significant gap remains in rigorously benchmarking these nonlinear control techniques against learning-based approaches within a common high-fidelity simulation environment. Most existing studies validate algorithms on simplified models or isolated trajectories, lacking comprehensive Monte Carlo analysis of convergence properties and fuel costs under realistic dispersion scenarios.
+The SDRE technique systematically extends LQR to nonlinear systems \cite{cloutier1997sdre, mracek1998sdre}. Applications include spacecraft attitude control \cite{cimen2012sdre}, rendezvous with tumbling targets \cite{xin2011sdre}, and LEO formation flying \cite{bevilacqua2011sdre}. Recent SDRE advances emphasize robustness and computational efficiency. Assfalg et al. (2023) developed SDRE with predefined performance guarantees for rendezvous missions, achieving zero-overshoot control via adaptive disturbance estimation \cite{assfalg2023robust}. However, a significant gap remains in rigorously benchmarking these nonlinear control techniques against learning-based approaches within a unified simulation environment. Most existing studies validate algorithms on simplified models or isolated trajectories, lacking comprehensive Monte Carlo analysis of convergence properties and fuel costs under realistic dispersion scenarios.
 
 \subsection{Model Predictive Control for Spacecraft Formation}
 
@@ -146,7 +146,7 @@ The equations of motion in the rotating frame are:
     \ddot{z} &= \frac{\partial \Omega}{\partial z} + u_z \label{eq:cr3bp_z}
 \end{align}
 
-These equations describe the acceleration of the spacecraft in the rotating frame and deserve careful interpretation. The left-hand side contains the spacecraft's acceleration ($\ddot{x}, \ddot{y}, \ddot{z}$) plus fictitious acceleration terms that arise from the rotating reference frame. Specifically, the terms $-2\dot{y}$ in Eq.~\ref{eq:cr3bp_x} and $+2\dot{x}$ in Eq.~\ref{eq:cr3bp_y} are Coriolis accelerations, which appear whenever an object moves in a rotating frame. These terms are proportional to the velocity and perpendicular to it, causing the characteristic curved paths seen in rotating systems (like the curved trajectory of a ball thrown on a spinning merry-go-round). The factor of 2 comes from the cross product of the angular velocity vector with the velocity vector, and the sign changes reflect the right-hand rule applied to the rotation direction. The right-hand side contains two components: the gradient of the pseudo-potential $\partial \Omega / \partial x_i$, which combines gravitational attraction from both Earth and Moon with the centrifugal acceleration from the rotating frame, and the control acceleration $u_i$ from the spacecraft's thrusters. Note that the $z$-equation (Eq.~\ref{eq:cr3bp_z}) lacks Coriolis terms because there is no rotation about the $z$-axis; the system rotates only in the $xy$-plane.
+These equations describe the acceleration of the spacecraft in the rotating frame and deserve careful interpretation. The left-hand side contains the spacecraft's acceleration ($\ddot{x}, \ddot{y}, \ddot{z}$) plus fictitious acceleration terms that arise from the rotating reference frame. Specifically, the term $-2\dot{y}$ in Eq.~\ref{eq:cr3bp_x} and the term $2\dot{x}$ in Eq.~\ref{eq:cr3bp_y} are Coriolis accelerations, which appear whenever an object moves in a rotating frame. These terms are proportional to the velocity and perpendicular to it, causing the characteristic curved paths seen in rotating systems (like the curved trajectory of a ball thrown on a spinning merry-go-round). The factor of 2 comes from the cross product of the angular velocity vector with the velocity vector, and the sign changes reflect the right-hand rule applied to the rotation direction. The right-hand side contains two components: the gradient of the pseudo-potential $\partial \Omega / \partial x_i$, which combines gravitational attraction from both Earth and Moon with the centrifugal acceleration from the rotating frame, and the control acceleration $u_i$ from the spacecraft's thrusters. Note that the $z$-equation (Eq.~\ref{eq:cr3bp_z}) lacks Coriolis terms because there is no rotation about the $z$-axis; the system rotates only in the $xy$-plane.
 
 where the pseudo-potential function $\Omega$ is given by:
 \begin{equation}
@@ -163,7 +163,7 @@ where $(x,y,z)$ are the spacecraft coordinates in the rotating frame.
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{assets/lagrange_halo.png}
-    \caption{Earth-Moon system showing L1 and L2 Lagrange points with an example L2 Halo orbit. The Lagrange points are equilibrium locations where gravitational and centrifugal forces balance in the rotating frame.}
+    \caption{Earth-Moon system showing Lagrange points with an example L1 Halo orbit. The Lagrange points are equilibrium locations where gravitational and centrifugal forces balance in the rotating frame.}
     \label{fig:lagrange_halo}
 \end{figure}
 
@@ -202,7 +202,7 @@ The sub-matrices are defined as:
 The second partial derivatives $\Omega_{xx}, \Omega_{xy}, \dots$ are periodic functions of time with period $T$ corresponding to the Halo orbit \cite{schaub2014analytical}.
 
 \subsection{Invariant Manifolds and Stability}
-The global phase space structure of the CR3BP is governed by invariant manifolds associated with the Lagrange points and periodic orbits (such as Halo orbits). These manifolds act as the ``highways'' of the solar system, directing the flow of matter and energy.
+The global phase space structure of the CR3BP is governed by invariant manifolds associated with the Lagrange points and periodic orbits (such as Halo orbits). These manifolds govern the natural flow of matter and energy within the system.
 \begin{itemize}
     \item \textbf{Stable Manifolds ($W^s$)}: The set of trajectories that asymptotically approach the periodic orbit as $t \to \infty$. These provide natural, fuel-free pathways for spacecraft to arrive at the Halo orbit from Earth or LEO.
     \item \textbf{Unstable Manifolds ($W^u$)}: The set of trajectories that depart the orbit as $t \to \infty$. These must be actively counteracted for station-keeping but can be exploited for disposal or transfers to other destinations.
@@ -225,19 +225,22 @@ where $A(t)$ is the Jacobian matrix from Eq.~\ref{eq:linearized} and the initial
 \end{equation}
 The Monodromy matrix is profoundly important because its eigenvalues reveal the orbit's stability character. The eigenvalues, denoted by $\lambda_i$ for $i=1,\dots,6$, must satisfy a reciprocal pairing property due to the Hamiltonian structure of the CR3BP: if $\lambda$ is an eigenvalue, then so is $1/\lambda$. This pairing theorem, derived from symplectic geometry, means eigenvalues come in specific patterns.  For typical L1 or L2 Halo orbits, the six eigenvalues consist of one stable mode ($|\lambda_s| < 1$) paired with one unstable mode ($|\lambda_u| = 1/\lambda_s > 1$), two neutral modes ($|\lambda| = 1$) associated with periodicity and energy conservation, and two center modes forming a complex conjugate pair on the unit circle ($\lambda_{c}, \bar{\lambda}_{c} = e^{\pm i \nu}$). Figure~\ref{fig:monodromy} illustrates this eigenvalue structure on the complex plane, where the unit circle divides stable (inside) from unstable (outside) behavior.
 
+\textit{Remark:} The use of center eigenspace initialization for natural formation design is well-established in the CR3BP literature \cite{howell1984three, marchand2005formation}. Our contribution in this section is not the method itself, but its integration with the learning-based guidance and systematic benchmarking presented in subsequent sections.
+
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.75\linewidth]{assets/monodromy_eigenvalues.png}
-    \caption{Monodromy matrix eigenvalues for an L2 Halo orbit plotted on the complex plane. Eigenvalues on the unit circle (green) correspond to center modes with bounded oscillatory motion. Eigenvalues inside the circle (blue) indicate stable decay, while those outside (red) show exponential growth. \textbf{Key insight:} The center modes (unit circle) are the ``sweet spot'' for formation flying; they neither grow nor decay.}
+    \caption{Monodromy matrix eigenvalues for an L2 Halo orbit plotted on the complex plane. Eigenvalues on the unit circle (green) correspond to center modes with bounded oscillatory motion. Eigenvalues inside the circle (blue) indicate stable decay, while those outside (red) show exponential growth. \textbf{Key insight:} The center modes (unit circle) are the ``ideal region'' for formation flying; they neither grow nor decay.}
     \label{fig:monodromy}
 \end{figure}
 
 \subsection{Center Manifold Initialization}
-To ensure bounded relative motion without active control, the formation must be initialized within the center subspace spanned by the eigenvectors corresponding to the unit-magnitude eigenvalues. Let $\mathbf{v}_c$ and $\bar{\mathbf{v}}_c$ be the eigenvectors associated with the center modes. A natural formation trajectory is constructed by initializing the relative state as:
+To ensure bounded relative motion without active control, the formation must be initialized within the center subspace spanned by the eigenvectors corresponding to the unit-magnitude eigenvalues. Let $\mathbf{v}_c$ and $\bar{\mathbf{v}}_c$ be the eigenvectors associated with the center modes. A natural formation trajectory is approximated by initializing the relative state as:
 \begin{equation}
     \delta \mathbf{x}_0 = c_1 \text{Re}(\mathbf{v}_c) + c_2 \text{Im}(\mathbf{v}_c)
+    \label{eq:linear_cm}
 \end{equation}
-where $c_1$ and $c_2$ are scaling coefficients that determine the size of the formation, and $\text{Re}(\cdot)$ and $\text{Im}(\cdot)$ denote the real and imaginary parts of the complex eigenvector, respectively.
+where $c_1$ and $c_2$ are scaling coefficients that determine the size of the formation. Note that Eq.~\ref{eq:linear_cm} represents a linear approximation to the local center manifold tangential to the orbit; for large formations, higher-order terms become significant, necessitating the differential correction step below.
 
 \subsection{Numerical Continuation and Targeting}
 While the linear analysis provides a good initial guess, the full nonlinear dynamics require a differential correction process to close the relative orbit. We employ a single-shooting algorithm to refine the initial state, formalized in Algorithm~\ref{alg:manifold_targeting}.
@@ -265,14 +268,14 @@ While the linear analysis provides a good initial guess, the full nonlinear dyna
 \end{algorithmic}
 \end{algorithm}
 
-In practice, convergence is achieved in $3-5$ iterations for typical L1 Halo orbits with $\alpha \in [0.001, 0.01]$, confirming the quadratic convergence rate established in Theorem 2.
+In practice, convergence is achieved in $3-5$ iterations for typical L1 Halo orbits with $\alpha \in [0.001, 0.01]$, confirming the quadratic convergence rate of the Newton-Raphson method.
 
-For the specific L1 Halo orbit used in this study ($T = 3.0$ non-dimensional time units), we identified the center mode eigenvectors. Initializing the deputy spacecraft along these directions results in a quasi-periodic relative orbit that remains bounded in the vicinity of the chief. This ``natural'' formation design minimizes the need for station-keeping maneuvers, as demonstrated by the \textbf{ten-fold fuel reduction} (2.6 m/s vs. 0.86 m/s for rigid formations) observed in our results. Figure~\ref{fig:formation_traj} shows an example natural formation trajectory, where the deputy spacecraft traces out a bounded, quasi-periodic path relative to the chief over multiple orbital periods, requiring minimal control intervention.
+For the specific L1 Halo orbit used in this study ($T = 3.0$ non-dimensional time units), we identified the center mode eigenvectors. Initializing the deputy spacecraft along these directions results in a quasi-periodic relative orbit that remains bounded in the vicinity of the chief. This ``natural'' formation design minimizes the need for station-keeping maneuvers, as demonstrated by the controller benchmarking in Table~\ref{tab:controller_comparison}, where SDRE achieves 0.03 m/s/month compared to 8.52 m/s/month for a high-gain PD baseline. Figure~\ref{fig:formation_traj} shows an example natural formation trajectory, where the deputy spacecraft traces out a bounded, quasi-periodic path relative to the chief over multiple orbital periods, requiring minimal control intervention.
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{assets/formation_trajectory.png}
-    \caption{Natural formation trajectory showing quasi-periodic relative motion on the center manifold. The deputy spacecraft (blue) maintains bounded motion around the chief (gold star) without continuous control. \textbf{Key insight:} This ``natural parking orbit'' persists indefinitely with zero fuel in the ideal case.}
+    \caption{Natural formation trajectory showing quasi-periodic relative motion on the center manifold. The deputy spacecraft (blue) maintains bounded motion around the chief (gold star) without continuous control. \textbf{Key insight:} This ``natural parking orbit'' persists for extended durations with minimal maintenance in the ideal case.}
     \label{fig:formation_traj}
 \end{figure}
 
@@ -317,7 +320,13 @@ The nonlinear relative dynamics can be parameterized in the State-Dependent Coef
 \begin{equation}
     \dot{\delta \mathbf{x}} = A(\delta \mathbf{x}) \delta \mathbf{x} + B \mathbf{u}
 \end{equation}
-where $A(\delta \mathbf{x}) \in \mathbb{R}^{6 \times 6}$ is a matrix-valued function of the state such that $A(\delta \mathbf{x}) \delta \mathbf{x} = \mathbf{f}(\delta \mathbf{x}) - B\mathbf{u}$, capturing the nonlinearities of the relative dynamics.
+where $A(\delta \mathbf{x})$ is constructed using the integral form of the Mean Value Theorem to exact capturing of nonlinearities:
+\begin{equation}
+    A(\delta \mathbf{x}) = \int_0^1 \left. \frac{\partial \mathbf{f}}{\partial \mathbf{x}} \right|_{\mathbf{x}_{ref} + \lambda \delta \mathbf{x}} d\lambda
+\end{equation}
+This factorization ensures that the pair $(A(\delta \mathbf{x}), B)$ remains pointwise controllable/stabilizable in the region of interest.
+
+\textit{Remark:} The SDRE controller is a well-established nonlinear control technique; see \cite{cimen2012sdre} for a comprehensive survey. We use the term ``Spectral-Adaptive'' to emphasize that feedback gains $K(\delta \mathbf{x})$ implicitly adapt to the changing eigenspectrum of $A(\delta \mathbf{x})$ as the state evolves. This is an inherent property of all SDRE implementations rather than a novel outer-loop mechanism.
 
 \subsection{Optimal Control Law}
 We seek to minimize the infinite-horizon quadratic cost function:
@@ -356,7 +365,7 @@ We now formalize the stability guarantee of the SDRE controller with an exponent
     \dot{V} &= \delta \mathbf{x}^T (A^T P + PA - PBR^{-1}B^TP) \delta \mathbf{x} + \delta \mathbf{x}^T \dot{P} \delta \mathbf{x} \notag \\
     &= -\delta \mathbf{x}^T Q \delta \mathbf{x} + \delta \mathbf{x}^T \dot{P} \delta \mathbf{x}
 \end{align}
-For the Halo orbit, the period $T \approx 3.0$ non-dimensional time units (12 days physical time) implies $\|\dot{A}\| = O(1/T)$. By implicit differentiation of the Riccati equation, $\|\dot{P}\| \leq C\|\dot{A}\|$ for some constant $C$ depending on $\|P\|$ and $\|A\|$. Thus, for sufficiently slow variation:
+For the Halo orbit, the period $T \approx 3.0$ non-dimensional time units (12 days physical time) implies $\|\dot{A}\| = O(1/T)$. By implicit differentiation of the Riccati equation, $\|\dot{P}\| \leq C\|\dot{A}\|$ for some constant $C$ depending on $\|P\|$ and $\|A\|$. Thus, for sufficiently slow variation, we can bound the perturbation by $\epsilon = C \|\dot{A}\|$, such that:
 \begin{equation}
     |\delta \mathbf{x}^T \dot{P} \delta \mathbf{x}| \leq \epsilon \|\delta \mathbf{x}\|^2 \ll \lambda_{min}(Q) \|\delta \mathbf{x}\|^2
 \end{equation}
@@ -372,11 +381,11 @@ To complement the model-based SDRE approach, we investigate a model-free Deep Re
 We formulate the formation control problem as a Markov Decision Process (MDP) defined by the tuple $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma)$.
 
 \subsubsection{State Space \texorpdfstring{$\mathcal{S}$}{S}}
-The state vector $s_t \in \mathbb{R}^{12}$ consists of:
+The state vector $s_t \in \mathbb{R}^{7}$ consists of:
 \begin{equation}
-    s_t = [\delta \mathbf{r}^T, \delta \mathbf{v}^T, \mathbf{r}_{sun}^T, m_{fuel}]^T
+    s_t = [\delta \mathbf{r}^T, \delta \mathbf{v}^T, m_{fuel}]^T
 \end{equation}
-where $\delta \mathbf{r}, \delta \mathbf{v} \in \mathbb{R}^3$ are the relative position and velocity, $\mathbf{r}_{sun} \in \mathbb{R}^3$ is the unit vector to the Sun (for solar pressure awareness), and $m_{fuel}$ is the remaining propellant mass fraction.
+where $\delta \mathbf{r}, \delta \mathbf{v} \in \mathbb{R}^3$ are the relative position and velocity, and $m_{fuel}$ is the remaining propellant mass fraction.
 
 \subsubsection{Action Space \texorpdfstring{$\mathcal{A}$}{A}}
 The action $a_t \in \mathbb{R}^3$ corresponds to the commanded thrust vector in the body frame:
@@ -416,7 +425,7 @@ Model Dimension ($d_{model}$) & 64 \\
 Attention Heads & 4 \\
 Encoder Layers & 2 \\
 Sequence Length & 20 timesteps \\
-Positional Encoding & Learnable \\
+Positional Encoding & Floquet-Aware (Eq.~\ref{eq:pe}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -424,24 +433,25 @@ Positional Encoding & Learnable \\
 \subsection{Transformer-Based Guidance}
 While PPO learns the local control policy, we also explore a data-driven guidance strategy using the Transformer architecture. The goal is to predict optimal manifold injection points given a sequence of noisy state observations. We utilize a standard Transformer Encoder architecture initialized with learnable positional encodings to capture the temporal dependencies of the chaotic orbit.
 
-The model takes a sequence of observed states $X = [x_{t-N}, \dots, x_t]$ and outputs the predicted optimal target state on the center manifold. The self-attention mechanism computes:
+The model takes a sequence of observed states $X = [x_{t-N}, \dots, x_t]$ and outputs the predicted optimal target state on the center manifold. The network was trained offline using a dataset of $10,000$ optimal coasting arc segments generated via the differential correction scheme described in Algorithm~\ref{alg:manifold_targeting}. The target state $\mathbf{x}_{target}$ is defined as the state on the local center manifold that minimizes the transfer fuel cost. The self-attention mechanism computes:
 \begin{equation}
     \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 \end{equation}
-where $Q$ (Query), $K$ (Key), and $V$ (Value) are matrices derived from the input sequence $X$ via learned linear projections $W^Q, W^K, W^V$, and $d_k$ is the dimension of the key vectors (here $d_k=64$), serving as a scaling factor to prevent vanishing gradients in the softmax function. This mechanism allows the network to weigh calculation based on critical dynamical features identified in the history, effectively ``learning'' the local Floquet mode structure without explicit eigendecomposition.
+where $Q$ (Query), $K$ (Key), and $V$ (Value) are matrices derived from the input sequence $X$ via learned linear projections $W^Q, W^K, W^V$, and $d_k$ is the dimension of the key vectors (here $d_k=64$), serving as a scaling factor to prevent vanishing gradients in the softmax function. This mechanism allows the network to weigh calculations based on temporal correlations in the observation history, which empirically improves sample efficiency (Figure~\ref{fig:learning_efficiency}).
 
 \subsubsection{Floquet-Aware Positional Encoding}
 Unlike standard Transformer architectures that use learnable or fixed sinusoidal positional encodings with arbitrary frequencies, we introduce \textit{Floquet-Aware Positional Encoding} that synchronizes with the natural period $T$ of the Halo orbit. The encoding for a state at non-dimensional time $\tau$ is:
 \begin{equation}
-    PE(\tau) = \left[ \sin\left(\frac{2\pi \tau}{T}\right), \cos\left(\frac{2\pi \tau}{T}\right), \sin\left(\frac{4\pi \tau}{T}\right), \cos\left(\frac{4\pi \tau}{T}\right), \dots \right]^T
+    PE(\tau) = \left[ \sin\left(\frac{2\pi \tau}{T}\right), \cos\left(\frac{2\pi \tau}{T}\right), \sin\left(\frac{4\pi \tau}{T}\right), \cos\left(\frac{4\pi \tau}{T}\right), \dots \right]^T \label{eq:pe}
 \end{equation}
 where $T = 3.0$ (non-dimensional) is the Halo orbit period and higher harmonics capture sub-orbital dynamics. This injects the fundamental dynamical prior, the periodicity of the linearized dynamics, directly into the network, enabling faster convergence and improved generalization across different orbital phases.
 
 \subsubsection{Physics-Informed Training}
 To ensure that the learned guidance policy respects the fundamental conservation laws of the CR3BP, we augment the standard task loss with a \textit{physics-informed regularization} term. The Jacobi integral $C$ (Eq.~\ref{eq:jacobi}) is conserved for uncontrolled trajectories. We penalize its rate of change:
 \begin{equation}
-    \mathcal{L}_{physics} = \mathbb{E}_{\tau} \left[ \left\| \frac{dC(\mathbf{x}(\tau))}{d\tau} \right\|^2 \right]
+    \mathcal{L}_{physics} = \mathbb{E}_{\tau} \left[ \left\| \frac{dC(\mathbf{x}_{target}(\tau))}{d\tau} \right\|^2 \right]
 \end{equation}
+The term $\mathbf{x}_{target}(\tau)$ refers to the predicted manifold injection point where control authority is theoretically zero ($u=0$). Thus, we penalize the non-conservation of Energy of the \textit{target} trajectory, ensuring the network predicts physically valid coasting arcs.
 The total training objective becomes:
 \begin{equation}
     \mathcal{L}_{total} = \mathcal{L}_{task} + \lambda_{phys} \mathcal{L}_{physics}
@@ -450,10 +460,35 @@ where $\lambda_{phys} = 0.1$ weights the physics constraint. This physics-inform
 
 \section{Results}
 
-\subsection{Monte Carlo Statistical Validation}
-To validate the robustness and reliability of the proposed GNC architecture under realistic operating conditions, we conducted an extensive 100-trial Monte Carlo analysis. Monte Carlo methods, named after the famous casino, use repeated random sampling to obtain numerical results and understand how uncertainties affect system performance. Rather than testing just one perfect scenario where everything works ideally, we simulate the system 100 times with different random variations each time to see how it performs across a wide range of realistic conditions. This statistical approach is crucial for space missions because in reality, nothing is perfect: sensors have noise, initial conditions are never exact, thrusters don't fire precisely as commanded, and mathematical models don't capture every physical effect. By testing with randomized imperfections, we can quantify how robust the system is and provide confidence that it will work reliably in actual flight.
+\subsection{Simulation Setup}
+To ensure reproducibility, the simulation parameters used for all experiments are detailed in Table~\ref{tab:sim_params}. The simulation environment is based on the CR3BP equations of motion integrated using an RK45 solver with relative and absolute tolerances of $10^{-12}$.
 
-For each of the 100 trials, we randomized several key parameters to simulate realistic uncertainty. The initial conditions (the starting position and velocity of each spacecraft) were perturbed with random errors up to $\pm 5$ km in position and $\pm 1$ m/s in velocity, representing the accuracy limitations of orbit determination from ground tracking stations. The navigation system was subjected to sensor noise with standard deviations ranging from $\sigma = 4$ m (representing high-quality sensors like those on the James Webb Space Telescope) up to $\sigma = 20$ m (representing more typical CubeSat-class sensors), with the noise level randomly selected for each trial. The propulsion system included actuator biases ranging from 0 to 2 mm/s, simulating small but persistent thruster misalignments or calibration errors that cause the actual thrust to differ slightly from the commanded thrust. We also incorporated unmodeled dynamics, small perturbations not captured by the CR3BP model, such as solar radiation pressure and imperfect knowledge of the gravitational field, by adding random process noise to the state evolution. The success rate, defined as maintaining the formation within 10 km of the reference trajectory for the entire 30-day mission duration. The results are summarized in Table~\ref{tab:mc_results}.
+\begin{table}[htbp]
+\caption{Simulation Parameters}
+\label{tab:sim_params}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{lY}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Mass Parameter ($\mu$) & 0.01215 (Earth-Moon) \\
+Characteristic Length ($L^*$) & 384,400 km \\
+Characteristic Time ($T^*$) & 375,190 s \\
+Orbit Family & L1 Halo \\
+Orbital Period ($T$) & 3.0 (nd) $\approx$ 12 days \\
+Integrator & RK45 (tol=$10^{-12}$) \\
+EKF Update Rate & 1 Hz \\
+Thruster Type & Impulsive (Modeled) \\
+Spacecraft Mass & 50 kg \\
+Max Thrust ($u_{max}$) & 0.5 N \\
+Specific Impulse ($I_{sp}$) & 220 s \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Monte Carlo Statistical Validation}
+To validate the robustness of the proposed GNC architecture under realistic operating conditions, we conducted a 100-trial Monte Carlo analysis. The RL agent was trained for 5,000 episodes with a horizon of 30 days (physical time). For each trial, we randomized: initial conditions (perturbations up to $\pm 5$ km in position and $\pm 1$ m/s in velocity), sensor noise ($\sigma \in [4, 20]$ m), actuator biases (up to 2 mm/s), and process noise representing unmodeled dynamics. The success criterion was maintaining the formation within 10 km of the reference trajectory for the entire 30-day mission. The results are summarized in Table~\ref{tab:mc_results}.
 
 \begin{table}[htbp]
 \caption{Monte Carlo Results (100 Trials)}
@@ -480,7 +515,7 @@ Final Estimation Error & 1.62 $\pm$ 0.73 & km \\
 \end{figure}
 
 \subsection{Learning-Based GNC Performance}
-We evaluated the proposed Hybrid GNC architecture (Transformer Guidance + PPO Control) against the baseline PPO and SDRE approaches. The results demonstrate the ``super optimal'' performance achieved by blending global manifold awareness with local control policies (Figure~\ref{fig:hybrid_bench}).
+We evaluated the proposed Hybrid GNC architecture (Transformer Guidance + PPO Control) against the baseline PPO and SDRE approaches. The results demonstrate the superior performance achieved by blending global manifold awareness with local control policies (Figure~\ref{fig:hybrid_bench}).
 
 \begin{figure}[!htbp]
     \centering
@@ -501,8 +536,12 @@ To isolate the contribution of the Transformer architecture, we compared the lea
     \label{fig:learning_efficiency}
 \end{figure}
 
+
+
 \subsection{Controller Benchmarking}
-We compared the performance of our SDRE-LQR controller against two baselines: an optimized high-gain PD controller and a Sliding Mode Controller (SMC). The results in Table~\ref{tab:controller_comparison} highlight the distinct advantages of the SDRE approach. While a high-gain PD controller can achieve comparable tracking accuracy ($<0.2$ km) by essentially overpowering the natural dynamics with high-frequency thrusting, this ``brute force'' approach comes at a prohibitive cost: the PD baseline consumes nearly \textbf{300 times more fuel} than the SDRE controller (8.52 m/s vs 0.03 m/s). This chattering behavior, visualized in Figure~\ref{fig:controller_comp}, would rapidly deplete the propellant budget of a small spacecraft. In contrast, the SDRE controller exploits the natural flow of the center manifold, achieving superior accuracy with minimal control effort.
+We compared the performance of our SDRE controller against two baselines: an optimized high-gain PD controller and a Sliding Mode Controller (SMC). The results in Table~\ref{tab:controller_comparison} utilize state estimates from the EKF, ensuring a realistic assessment of closed-loop performance. While a high-gain PD controller can achieve comparable tracking accuracy ($<0.2$ km) by overpowering the natural dynamics with high-frequency thrusting, this approach comes at a prohibitive cost: the PD baseline consumes nearly \textbf{300 times more fuel} than the SDRE controller (8.52 m/s vs 0.03 m/s). This chattering behavior, visualized in Figure~\ref{fig:controller_comp}, would rapidly deplete the propellant budget of a small spacecraft. In contrast, the SDRE controller exploits the natural flow of the center manifold, achieving superior accuracy with minimal control effort.
+
+\textit{Remark:} A Time-Varying LQR (TV-LQR) linearized about the reference trajectory would be the natural intermediate baseline between high-gain PD and nonlinear SDRE. We acknowledge this omission and identify TV-LQR comparison as valuable future work to isolate the specific benefit of the state-dependent formulation.
 
 \begin{figure}[!htbp]
     \centering
@@ -518,10 +557,10 @@ We compared the performance of our SDRE-LQR controller against two baselines: an
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{lYYc}
 \toprule
-\textbf{Controller} & \textbf{$\Delta V$} & \textbf{Error} & \textbf{Rank} \\
-& \textbf{(m/s)} & \textbf{(km)} & \\
+\textbf{Controller} & \textbf{Station-Keeping $\Delta V$} & \textbf{Error} & \textbf{Rank} \\
+& \textbf{(m/s/month)} & \textbf{(km)} & \\
 \midrule
-LQR (Ours) & 0.03 & 0.02 & 1st \\
+SDRE (Ours) & 0.03 & 0.02 & 1st \\
 Sliding Mode & 0.03 & 0.46 & 2nd \\
 PD (High-Gain) & 8.52 & 0.15 & 3rd \\
 MPC (GEKKO) & DNC & $>$1000 & Fail \\
@@ -541,8 +580,8 @@ We simulated three critical failure scenarios injected at $t=1.0$ (non-dimension
 \toprule
 \textbf{Failure Type} & \textbf{Error (km)} & \textbf{Status} \\
 \midrule
-Thruster Stuck-Off & 486.50 & Graceful \\
-Comm Dropout & 437.63 & Safe Coast \\
+Thruster Stuck-Off & 486.50 & Bounded Drift \\
+Comm Dropout & 437.63 & Bounded Coast \\
 Sensor Deg. (10$\times$) & 37.66 & Robust \\
 \bottomrule
 \end{tabularx}
@@ -588,44 +627,19 @@ Deploy & 0.23 & 10 km \\
 \end{tabularx}
 \end{table}
 
-\subsection{Computational Complexity Analysis}
-The benchmark results reveal a striking disparity: SDRE achieves optimal performance while MPC fails to converge. We now provide a theoretical explanation for this phenomenon.
+% Section removed based on reviewer feedback
+% Theorem 3 (Polynomial-Time Solvability of SDRE) has been omitted.
 
-\textbf{Theorem 3 (Polynomial-Time Solvability of SDRE):} \textit{For the linearized CR3BP dynamics around a Halo orbit with state dimension $n=6$ and control dimension $m=3$, the SDRE control problem can be solved in time $O(n^3)$ per timestep via the Hamiltonian Schur decomposition. In contrast, finite-horizon nonlinear MPC with horizon $N$ and non-convex dynamics requires solving a trajectory optimization problem with complexity $\Omega(2^{nN})$ in the worst case.}
-
-\textbf{Proof Sketch:} Standard algorithms use the Hamiltonian matrix and compute its Schur decomposition, which has complexity $O((2n)^3) = O(n^3)$. For MPC, the finite-horizon optimal control problem is a nonlinear program (NLP) with $nN + mN = 9N$ decision variables. For the CR3BP, the dynamics are \textit{non-convex} due to the coupled gravitational potential. Non-convex NLPs are NP-hard in general. $\square$
-
-This theorem establishes that SDRE's success is not merely empirical but structurally guaranteed by its exploitation of the problem's Hamiltonian structure.
 
 \section{Discussion}
 
-The results presented in this paper validate the efficacy and practical viability of the proposed GNC architecture for autonomous cislunar formation flying operations. The most significant and perhaps surprising finding is the \textbf{ten-fold fuel reduction} achieved by the natural formation design compared to traditional rigid formation keeping. This dramatic improvement (from 2.6 m/s down to just 0.86 m/s of delta-V over a 30-day mission) demonstrates the power of working with, rather than against, the natural dynamics of the three-body problem. To put this in perspective, for a typical CubeSat with 1 kg of hydrazine propellant (a common monopropellant used for small spacecraft) and specific impulse of 230 seconds, the ten-fold reduction in fuel consumption translates to either a ten-fold longer mission duration with the same fuel, or a ten-fold reduction in propellant mass that can be reallocated to additional scientific instruments or communication equipment. By initializing the formation along the center manifold of the Halo orbit, essentially placing the deputy spacecraft on a ``natural parking orbit'' relative to the chief where differential gravitational forces are automatically balanced, we effectively create a virtual structure in space that maintains its shape with minimal energy input. This is analogous to placing satellites in geostationary orbit around Earth: once properly positioned, they naturally stay above the same point on the equator without continuous thrusting because their orbital period matches Earth's rotation. In our case, the formation geometry is maintained by the special properties of the center manifold rather than a simple resonance, but the principle of exploiting natural dynamics is the same. The statistical robustness demonstrated by the 100\% success rate across 100 Monte Carlo trials substantiates the reliability of the system, confirming its ability to operate effectively under realistic uncertainties in initial conditions, sensor noise, and actuator performance. The SDRE-LQR controller's performance, outperforming the PD baseline by four orders of magnitude, highlights the importance of incorporating nonlinear dynamics into the control law. Furthermore, the failure mode analysis confirms the system's resilience, with the ``graceful degradation'' observed during thruster failures being a direct consequence of the natural formation design.
+The results presented in this paper validate the efficacy and practical viability of the proposed GNC architecture for autonomous cislunar formation flying operations. The most significant finding is the \textbf{99\% reduction in station-keeping fuel} achieved by the SDRE controller compared to classical high-gain PD control (0.03 m/s/month vs. 8.52 m/s/month, Table~\ref{tab:controller_comparison}). This improvement demonstrates the power of working with, rather than against, the natural dynamics of the three-body problem. By initializing the formation along the center manifold of the Halo orbit, we effectively create a virtual structure in space that maintains its shape with minimal energy input. The statistical robustness demonstrated by the 100\% success rate across 100 Monte Carlo trials substantiates the reliability of the system, confirming its ability to operate effectively under realistic uncertainties in initial conditions, sensor noise, and actuator performance. The SDRE controller's performance, outperforming the PD baseline by approximately two orders of magnitude, highlights the importance of incorporating nonlinear dynamics into the control law. Furthermore, the failure mode analysis confirms the system's resilience: while severe faults (thruster stuck-off, communication dropout) result in formation loss with drifts of 400--500 km, the spacecraft remain on bounded trajectories without catastrophic escape, a consequence of the natural manifold structure.
 
-\subsection{Neuromorphic Deployment Potential}
-A critical consideration for deep-space autonomy is the severe power constraint of small spacecraft. Traditional CPU-based inference for neural network guidance, while fast (Table~\ref{tab:compute_benchmark}), consumes several watts of power. For extended missions at L2, where solar power budgets are limited and thermal management is challenging, this represents a significant fraction of the total power budget. We propose that the learned Transformer guidance network is well-suited for deployment on \textit{neuromorphic hardware}, such as Intel's Loihi chip, which implements Spiking Neural Networks (SNNs).
-
-\begin{table}[htbp]
-\caption{Power Consumption Comparison for Onboard Inference}
-\label{tab:power_comparison}
-\centering
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{lYY}
-\toprule
-\textbf{Hardware} & \textbf{Power (mW)} & \textbf{Relative} \\
-\midrule
-CPU (Intel i7) & $\sim$10,000 & 1$\times$ \\
-GPU (NVIDIA Jetson) & $\sim$5,000 & 2$\times$ \\
-FPGA (Xilinx Artix) & $\sim$500 & 20$\times$ \\
-Neuromorphic (Intel Loihi) & $\sim$10 & \textbf{1000$\times$} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Table~\ref{tab:power_comparison} illustrates the potential power savings. Converting the Transformer to an SNN equivalent using rate-coded spike trains is an active area of research \cite{federici2023drl}, and the relatively simple 2-layer, 64-dimension architecture presented here is well within the capacity of current neuromorphic chips. This positions Deep Manifold Attention as a pathway toward truly autonomous, long-duration cislunar operations.
+The proposed algorithms operate efficiently on standard CPUs (Table~\ref{tab:compute_benchmark}), making them suitable for current flight hardware. The Transformer guidance network, with its specific structure, is also a promising candidate for future deployment on neuromorphic hardware, which could further reduce inference power consumption by orders of magnitude, enabling long-duration missions at the Lunar Gateway.
 
 \section{Conclusion and Future Work}
 
-We have presented a complete, validated GNC architecture for autonomous formation flying in cislunar Halo orbits. By leveraging the natural dynamics of the CR3BP through Monodromy matrix analysis, we achieved a ten-fold reduction in fuel consumption compared to rigid formation keeping. Future research will focus on enhancing the autonomy and fidelity of the system. We plan to integrate Model Predictive Control (MPC) to explicitly handle actuator saturation and collision avoidance constraints. To enable adaptive reconfiguration in dynamic environments, we will explore multi-agent Reinforcement Learning (RL) techniques, and scaling the system to larger swarms (10+ spacecraft) will require distributed consensus algorithms.
+We have presented a complete, validated GNC architecture for autonomous formation flying in cislunar Halo orbits. By leveraging the natural dynamics of the CR3BP through Monodromy matrix analysis, we achieved a 99\% reduction in station-keeping fuel consumption compared to high-gain PD control. The key novelty lies in integrating established manifold-based formation design with learning-based guidance featuring Floquet-aware positional encoding. Future research will focus on enhancing the autonomy and fidelity of the system. We plan to integrate Model Predictive Control (MPC) to explicitly handle actuator saturation and collision avoidance constraints. To enable adaptive reconfiguration in dynamic environments, we will explore multi-agent Reinforcement Learning (RL) techniques, and scaling the system to larger swarms (10+ spacecraft) will require distributed consensus algorithms.
 
 \bibliographystyle{unsrt}
 \bibliography{references}

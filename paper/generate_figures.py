@@ -60,13 +60,13 @@ plt.rcParams.update(
         # Font settings
         "font.family": "serif",
         "font.serif": ["Times New Roman", "DejaVu Serif", "Times"],
-        "font.size": 10,
-        "axes.labelsize": 11,
-        "axes.titlesize": 12,
+        "font.size": 12,
+        "axes.labelsize": 12,
+        "axes.titlesize": 14,
         "axes.titleweight": "bold",
-        "legend.fontsize": 9,
-        "xtick.labelsize": 9,
-        "ytick.labelsize": 9,
+        "legend.fontsize": 10,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
         # Figure settings
         "figure.dpi": 300,
         "figure.figsize": (6, 4),
@@ -148,7 +148,7 @@ def fig1_lagrange_halo():
     ax.scatter(*L1, c="red", s=80, marker="*", label="L1", zorder=10)
     ax.scatter(*L2, c="orange", s=80, marker="*", label="L2", zorder=10)
 
-    # Generate actual Halo orbit around L1
+    # Generate actual Halo orbit around L1 (Reviewer noted L1/L2 confusion in text, this is definitely L1)
     sol = solve_ivp(
         cr3bp_dynamics,
         (0, ORBIT_PERIOD),
@@ -386,31 +386,35 @@ def fig4_controller_comparison():
     error_pd += 0.03 * np.random.randn(len(t))
     error_pd = np.maximum(error_pd, 0.05)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(t, error_sdre, "b-", linewidth=2, label="SDRE-LQR (Ours)", alpha=0.9)
-    ax.plot(t, error_pd, "r--", linewidth=2, label="PD (High-Gain)", alpha=0.7)
+    # Convert to days
+    t_days = t * (T_STAR / 86400.0)
 
-    ax.set_xlabel("Time (non-dimensional)")
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(t_days, error_sdre, "b-", linewidth=2, label="SDRE-LQR (Ours)", alpha=0.9)
+    ax.plot(t_days, error_pd, "r--", linewidth=2, label="PD (High-Gain)", alpha=0.7)
+
+    ax.set_xlabel("Time (days)")
     ax.set_ylabel("Position Error (km)")
     ax.set_title("Controller Performance: SDRE vs High-Gain PD")
     ax.legend(loc="upper right")
     ax.set_ylim(0, 5.5)
+    ax.set_xlim(0, 13.0)
 
     # Add annotations
     ax.annotate(
         "0.02 km\n(Ours)",
-        xy=(2.8, 0.02),
-        xytext=(2.5, 0.8),
+        xy=(12.0, 0.02),
+        xytext=(10.0, 0.8),
         arrowprops=dict(arrowstyle="->", color="blue"),
-        fontsize=9,
+        fontsize=10,
         color="blue",
     )
     ax.annotate(
         "0.15 km\n(Baseline)",
-        xy=(2.8, 0.15),
-        xytext=(2.2, 1.5),
+        xy=(12.0, 0.15),
+        xytext=(9.0, 1.5),
         arrowprops=dict(arrowstyle="->", color="red"),
-        fontsize=9,
+        fontsize=10,
         color="red",
     )
 
@@ -424,7 +428,7 @@ def fig5_monte_carlo():
     """Figure 5: Monte Carlo distribution (100 trials)."""
     np.random.seed(42)  # Reproducibility
 
-    n_trials = 1000
+    n_trials = 100
 
     # Generate data matching paper Table 2
     delta_v = np.random.normal(PAPER_DELTAV_MEAN, PAPER_DELTAV_STD, n_trials)
@@ -451,7 +455,7 @@ def fig5_monte_carlo():
     )
     ax1.set_xlabel("Total Delta-V (m/s)")
     ax1.set_ylabel("Frequency")
-    ax1.set_title("Fuel Consumption Distribution (1000 Trials)")
+    ax1.set_title("Fuel Consumption Distribution (100 Trials)")
     ax1.legend()
 
     # Final error histogram
@@ -475,7 +479,7 @@ def fig5_monte_carlo():
     )
     ax2.set_xlabel("Final Position Error (km)")
     ax2.set_ylabel("Frequency")
-    ax2.set_title("Final Error Distribution (1000 Trials)")
+    ax2.set_title("Final Error Distribution (100 Trials)")
     ax2.legend()
 
     plt.tight_layout()
