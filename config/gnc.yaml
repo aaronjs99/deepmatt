@@ -1,0 +1,28 @@
+# Reproducible GNC simulation. All inputs use normalized rotating-frame CR3BP
+# units, including time and acceleration. State order: x, y, z, vx, vy, vz.
+# 1 length unit = 384400 km; 1 time unit = 375200 s for the default system.
+duration: 0.3
+time_step: 0.01
+seed: 7
+
+# Reference: an unforced deputy initialized at this offset from the chief.
+# This is an explicit reference trajectory, not a guarantee of bounded motion.
+relative_offset: [2.6e-5, 0, 0, 0, 0, 0]
+initial_relative_error: [1.0e-6, -1.0e-6, 0, 0, 0, 0]
+
+# Standard deviations; measurement_std=1e-8 corresponds to about 3.844 m.
+initial_estimate_std: 1.0e-8
+measurement_std: 1.0e-8
+# Discrete state covariance added per EKF prediction (not a spectral density).
+process_noise_variance: 1.0e-18
+
+thruster_noise_std: 1.0e-5
+thruster_bias: 1.0e-6
+# Acceleration deadband; actual thrust is norm-limited after noise and bias.
+thruster_deadband: 1.0e-8
+max_acceleration: 0.05
+
+lqr_state_weights: [1.0e4, 1.0e4, 1.0e4, 1.0e2, 1.0e2, 1.0e2]
+lqr_control_weight: 0.1
+rtol: 1.0e-9
+atol: 1.0e-12

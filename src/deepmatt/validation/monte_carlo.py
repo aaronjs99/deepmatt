@@ -12,7 +12,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from scipy.linalg import solve_continuous_are
+from deepmatt.gnc.control.lqr import lqr_gain
 import concurrent.futures
 from tqdm import tqdm
 
@@ -68,11 +68,8 @@ def run_single_trial(trial_id, verbose=False):
 
     def get_gain(x):
         A = linearized_dynamics(x)
-        B = np.zeros((6, 3))
-        B[3:, :] = np.eye(3)
         try:
-            P = solve_continuous_are(A, B, Q_lqr, R_lqr)
-            K = np.linalg.inv(R_lqr) @ B.T @ P
+            K = lqr_gain(A, Q_lqr, R_lqr)
             return K
         except:
             return np.zeros((3, 6))

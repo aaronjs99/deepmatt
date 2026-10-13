@@ -118,6 +118,8 @@ cython_debug/
 .vscode/
 
 # Project Specific
+# Each GNC run contains its own resolved config, numerical data, and plots.
+results/runs/
 # Results - Ignore all generated plots and logs, but keep the directory structure
 results/**/*.png
 results/**/*.gif

@@ -1,209 +1,258 @@
-# /***********************************************************
-# *                                                         *
-# * Copyright (c) 2025                                      *
-# *                                                         *
-# * University of California, Los Angeles                   *
-# *                                                         *
-# * Author : Aaron John-Sabu                                *
-# * Contact: aaronjs@g.ucla.edu                             *
-# *                                                         *
-# ***********************************************************/
+"""Reproducible sampled GNC simulation, independent of plotting and storage.
+
+Copyright (c) 2025 University of California, Los Angeles.
+Author: Aaron John-Sabu.
+
+Guidance follows an unforced deputy trajectory initialized with a configured
+offset. This does not certify that the reference is periodic or bounded.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import math
 
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from scipy.linalg import solve_continuous_are
 
-from deepmatt.core.params import mu, L1_HALO_INITIAL_STATE
-from deepmatt.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, linearized_dynamics
-from deepmatt.gnc.guidance import find_natural_formation
-from deepmatt.gnc.navigation import EKF
+from deepmatt.dynamics.cr3bp import cr3bp_dynamics, linearized_dynamics
 from deepmatt.gnc.actuators import Thruster
+from deepmatt.gnc.config import GNCConfig
+from deepmatt.gnc.control.lqr import lqr_gain
+from deepmatt.gnc.navigation import EKF
 
 
-def integrated_gnc_sim():
-    print("Running Integrated GNC Simulation (Guidance, Navigation, Control)...")
+@dataclass(frozen=True)
+class GNCResult:
+    """States include both endpoints; controls apply over successive intervals.
 
-    # 1. Guidance: Find Natural Formation
-    chief_initial = np.array(L1_HALO_INITIAL_STATE)
-    period = 3.0
+    Every array uses normalized rotating-frame CR3BP units. Absolute states
+    are [x, y, z, vx, vy, vz]. The navigation estimate is deputy minus chief.
+    """
 
-    print("Guidance: Calculating natural formation offsets...")
-    natural_dirs = find_natural_formation(chief_initial, period)
-    if len(natural_dirs) == 0:
-        print("No natural directions found. Using arbitrary offset.")
-        target_rel_state = np.array([1e-4, 0, 0, 0, 0, 0])
+    config: GNCConfig
+    time: np.ndarray
+    chief_state: np.ndarray
+    reference_state: np.ndarray
+    deputy_state: np.ndarray
+    estimated_relative_state: np.ndarray
+    covariance: np.ndarray
+    control_requested: np.ndarray
+    control_command: np.ndarray
+    control_applied: np.ndarray
+    delta_v: np.ndarray
+
+    @property
+    def position_error(self):
+        return np.linalg.norm(
+            self.deputy_state[:, :3] - self.reference_state[:, :3], axis=1
+        )
+
+    @property
+    def velocity_error(self):
+        return np.linalg.norm(
+            self.deputy_state[:, 3:] - self.reference_state[:, 3:], axis=1
+        )
+
+    @property
+    def estimation_position_error(self):
+        truth = self.deputy_state[:, :3] - self.chief_state[:, :3]
+        return np.linalg.norm(self.estimated_relative_state[:, :3] - truth, axis=1)
+
+    def summary(self):
+        """Separate position/velocity metrics; physical values require scales."""
+        system = self.config.system
+        length = (
+            None if system.length_scale_km is None else system.length_scale_km * 1000
+        )
+        velocity = (
+            None
+            if length is None or system.time_scale_s is None
+            else length / system.time_scale_s
+        )
+        position_error = self.position_error
+        return {
+            "schema_version": 1,
+            "status": "completed",
+            "model": "normalized rotating-frame CR3BP; sampled LQR; relative-position EKF",
+            "reference": "unforced deputy initialized with relative_offset; no periodicity guarantee",
+            "system": system.name,
+            "seed": self.config.seed,
+            "duration_nd": float(self.time[-1]),
+            "sample_count": len(self.time),
+            "interval_count": len(self.control_applied),
+            "final_position_error_nd": float(position_error[-1]),
+            "rms_position_error_nd": float(np.sqrt(np.mean(position_error**2))),
+            "max_position_error_nd": float(np.max(position_error)),
+            "final_velocity_error_nd": float(self.velocity_error[-1]),
+            "final_estimation_position_error_nd": float(
+                self.estimation_position_error[-1]
+            ),
+            "total_delta_v_nd": float(self.delta_v[-1]),
+            "final_position_error_m": None
+            if length is None
+            else float(position_error[-1] * length),
+            "final_estimation_position_error_m": None
+            if length is None
+            else float(self.estimation_position_error[-1] * length),
+            "final_velocity_error_m_s": None
+            if velocity is None
+            else float(self.velocity_error[-1] * velocity),
+            "total_delta_v_m_s": None
+            if velocity is None
+            else float(self.delta_v[-1] * velocity),
+            "saturated_interval_count": int(
+                np.count_nonzero(
+                    np.linalg.norm(self.control_requested, axis=1)
+                    > self.config.max_acceleration
+                )
+            ),
+        }
+
+
+def _time_grid(config):
+    full_steps = math.floor(config.duration / config.time_step)
+    time = np.arange(full_steps + 1, dtype=float) * config.time_step
+    if full_steps and math.isclose(time[-1], config.duration, rel_tol=1e-12):
+        time[-1] = config.duration
     else:
-        # Pick one (e.g., the first one, scaled)
-        # Scale to ~10 km (10/384400 ~ 2.6e-5)
-        scale = 2.6e-5
-        target_rel_state = natural_dirs[0] * scale
-        print(f"Target Relative State (Natural): {target_rel_state}")
+        time = np.r_[time, config.duration]
+    return time
 
-    # 2. Initialization
-    # True States
-    x_chief_true = chief_initial.copy()
-    x_deputy_true = chief_initial + target_rel_state
 
-    # Navigation Initialization (EKF)
-    # Initial estimate error
-    est_error = np.random.normal(0, 1e-6, 6)
-    x_rel_est = target_rel_state + est_error
+def run_gnc_simulation(config: GNCConfig | None = None) -> GNCResult:
+    """Run local simulation only; fail explicitly on incomplete integrations.
 
-    P0 = np.eye(6) * 1e-10
-    Q = np.eye(6) * 1e-12  # Process noise (model mismatch)
-    R = np.eye(3) * 1e-10  # Measurement noise (sensor)
+    Noise is drawn only at sample boundaries with a run-local Generator.
+    A chief, unforced reference, and controlled deputy share one ODE solve
+    per interval. The estimator knows commanded acceleration, not actuator
+    noise or the deputy's true velocity.
+    """
+    config = GNCConfig() if config is None else config
+    if not isinstance(config, GNCConfig):
+        raise ValueError("config must be a GNCConfig.")
+    rng = np.random.default_rng(config.seed)
+    time = _time_grid(config)
+    samples = len(time)
+    chief = np.empty((samples, 6))
+    reference = np.empty_like(chief)
+    deputy = np.empty_like(chief)
+    estimate = np.empty_like(chief)
+    covariance = np.empty((samples, 6, 6))
+    requested = np.empty((samples - 1, 3))
+    command = np.empty_like(requested)
+    applied = np.empty_like(requested)
+    delta_v = np.zeros(samples)
 
-    ekf = EKF(x_rel_est, P0, Q, R)
+    chief[0] = config.chief_initial_state
+    reference[0] = chief[0] + config.relative_offset
+    deputy[0] = reference[0] + config.initial_relative_error
+    ekf = EKF(
+        deputy[0] - chief[0] + rng.normal(0, config.initial_estimate_std, 6),
+        np.eye(6) * config.initial_estimate_std**2,
+        np.eye(6) * config.process_noise_variance,
+        np.eye(3) * config.measurement_std**2,
+        system=config.system,
+    )
+    thruster = Thruster(
+        noise_std=config.thruster_noise_std,
+        bias=config.thruster_bias,
+        min_impulse=config.thruster_deadband,
+        rng=rng,
+        max_acceleration=config.max_acceleration,
+    )
+    state_cost = np.diag(config.lqr_state_weights)
+    input_cost = np.eye(3) * config.lqr_control_weight
 
-    # Actuator Initialization
-    thruster = Thruster(noise_std=1e-5, bias=1e-6)
+    def observe(index):
+        measurement = deputy[index, :3] - chief[index, :3]
+        measurement = measurement + rng.normal(0, config.measurement_std, 3)
+        ekf.update(measurement)
+        if not np.all(np.isfinite(ekf.x)) or not np.all(np.isfinite(ekf.P)):
+            raise RuntimeError(f"Navigation became non-finite at t={time[index]:.8g}.")
+        estimate[index] = ekf.x
+        covariance[index] = ekf.P
 
-    # Control Gains (LQR)
-    Q_lqr = np.diag([1e4, 1e4, 1e4, 1e2, 1e2, 1e2])
-    R_lqr = np.eye(3) * 1e-1
-
-    def get_gain(x):
-        A = linearized_dynamics(x)
-        B = np.zeros((6, 3))
-        B[3:, :] = np.eye(3)
+    observe(0)
+    for index, step in enumerate(np.diff(time)):
+        start, end = time[index : index + 2]
         try:
-            P = solve_continuous_are(A, B, Q_lqr, R_lqr)
-            K = np.linalg.inv(R_lqr) @ B.T @ P
-            return K
-        except:
-            return np.zeros((3, 6))
+            jacobian = linearized_dynamics(chief[index], system=config.system)
+            gain = lqr_gain(jacobian, state_cost, input_cost)
+            error = estimate[index] - (reference[index] - chief[index])
+            requested[index] = -gain @ error
+            if not np.all(np.isfinite(requested[index])):
+                raise RuntimeError("LQR produced a non-finite command.")
+            magnitude = np.linalg.norm(requested[index])
+            command[index] = (
+                requested[index] * min(1.0, config.max_acceleration / magnitude)
+                if magnitude
+                else 0
+            )
+            if np.linalg.norm(command[index]) <= config.thruster_deadband:
+                command[index] = 0
+            applied[index] = thruster.fire(command[index])
 
-    # Simulation Loop
-    dt = 0.01
-    t_max = 3.0
-    steps = int(t_max / dt)
-    time = np.linspace(0, t_max, steps)
+            def dynamics(t, state):
+                derivative = np.concatenate(
+                    [
+                        cr3bp_dynamics(t, state[part : part + 6], system=config.system)
+                        for part in (0, 6, 12)
+                    ]
+                )
+                derivative[15:18] += applied[index]
+                return derivative
 
-    history = {"t": [], "pos_err_true": [], "est_err": [], "control": [], "fuel": 0.0}
+            initial = np.concatenate([chief[index], reference[index], deputy[index]])
+            solution = solve_ivp(
+                dynamics,
+                (start, end),
+                initial,
+                method="DOP853",
+                t_eval=[end],
+                rtol=config.rtol,
+                atol=config.atol,
+            )
+            if not solution.success:
+                raise RuntimeError(f"Physics integration failed: {solution.message}")
+            if solution.y.shape != (18, 1) or not np.all(np.isfinite(solution.y)):
+                raise RuntimeError(
+                    "Physics integration returned incomplete or non-finite states."
+                )
+            chief[index + 1], reference[index + 1], deputy[index + 1] = solution.y[
+                :, -1
+            ].reshape(3, 6)
+            ekf.predict(command[index], step, chief[index])
+            observe(index + 1)
+            delta_v[index + 1] = delta_v[index] + np.linalg.norm(applied[index]) * step
+        except (ValueError, np.linalg.LinAlgError, FloatingPointError) as exc:
+            raise RuntimeError(
+                f"GNC failed over t={start:.8g} to {end:.8g}: {exc}"
+            ) from exc
 
-    print("Starting Simulation Loop...")
-
-    for t in time:
-        # A. Navigation Update
-        # Simulate Sensor Measurement (True Relative Pos + Noise)
-        rel_pos_true = x_deputy_true[:3] - x_chief_true[:3]
-        meas_noise = np.random.normal(0, 1e-5, 3)  # ~4 meters noise
-        z = rel_pos_true + meas_noise
-
-        # EKF Update
-        ekf.update(z)
-        x_est = ekf.x  # Estimated relative state
-
-        # B. Guidance & Control
-        # Target: Maintain the natural relative orbit?
-        # If it's a natural orbit, x_target(t) evolves naturally.
-        # But here we want to regulate TO the natural orbit if we drift.
-        # Error = Estimated - Target
-        # Wait, if we start ON the natural orbit, target is just current state?
-        # No, we want to stay on the reference natural trajectory.
-        # Let's propagate the target relative state analytically or numerically.
-        # For simplicity, let's regulate to ZERO deviation from the initial natural offset propagated?
-        # Actually, let's just regulate to the *initial* relative state if it's a fixed point (it's not).
-        # Let's assume we want to track the *linearized* natural trajectory.
-        # x_target_k+1 = Phi * x_target_k
-
-        # Propagate target (ideal)
-        # For this step, we just use the current estimate as error? No.
-        # We need a reference trajectory.
-        # Let's generate the reference trajectory beforehand or propagate it.
-        if t == 0:
-            x_ref_rel = target_rel_state
-        else:
-            # Propagate reference using STM
-            A_ref = linearized_dynamics(x_chief_true)
-            x_ref_rel = x_ref_rel + (A_ref @ x_ref_rel) * dt
-
-        # Control Error
-        err_state = x_est - x_ref_rel
-
-        # LQR Control
-        K = get_gain(x_chief_true)
-        u_cmd = -K @ err_state
-
-        # C. Actuation
-        u_act = thruster.fire(u_cmd)
-        history["fuel"] += np.linalg.norm(u_act) * dt
-
-        # D. Propagation (Physics)
-        # Propagate Chief (Natural)
-        sol_c = solve_ivp(halo_dynamics, (0, dt), x_chief_true, method="RK45")
-        x_chief_next = sol_c.y[:, -1]
-
-        # Propagate Deputy (Natural + Control)
-        def dep_dyn(t, x):
-            d = halo_dynamics(t, x)
-            d[3:] += u_act
-            return d
-
-        sol_d = solve_ivp(dep_dyn, (0, dt), x_deputy_true, method="RK45")
-        x_deputy_next = sol_d.y[:, -1]
-
-        # E. Navigation Prediction
-        ekf.predict(u_cmd, dt, x_chief_true)
-
-        # Store Data
-        history["t"].append(t)
-        history["pos_err_true"].append(
-            np.linalg.norm((x_deputy_true - x_chief_true) - x_ref_rel)
-        )  # Deviation from reference
-        history["est_err"].append(
-            np.linalg.norm(x_est - (x_deputy_true - x_chief_true))
-        )  # Estimation error
-        history["control"].append(np.linalg.norm(u_act))
-
-        # Update
-        x_chief_true = x_chief_next
-        x_deputy_true = x_deputy_next
-
-    # Analysis
-    V_star = 1024.0
-    total_dv = history["fuel"] * V_star
-
-    print("\n--- GNC Simulation Results ---")
-    print(f"Total Delta-V: {total_dv:.2f} m/s")
-    print(
-        f"Final Position Error (True vs Ref): {history['pos_err_true'][-1] * 384400 * 1000:.2f} meters"
-    )
-    print(
-        f"Final Estimation Error: {history['est_err'][-1] * 384400 * 1000:.2f} meters"
+    return GNCResult(
+        config,
+        time,
+        chief,
+        reference,
+        deputy,
+        estimate,
+        covariance,
+        requested,
+        command,
+        applied,
+        delta_v,
     )
 
-    # Plot
-    fig, ax = plt.subplots(3, 1, figsize=(10, 12))
 
-    ax[0].plot(
-        history["t"],
-        np.array(history["pos_err_true"]) * 384400,
-        label="True Deviation (km)",
-    )
-    ax[0].set_title("Formation Keeping Error")
-    ax[0].set_ylabel("Error (km)")
-    ax[0].legend()
+def integrated_gnc_sim(config=None, *, output_dir="results/runs", plot=True):
+    """Backward-compatible executable entry point, with inspectable outputs."""
+    from deepmatt.output.gnc import save_gnc_result
 
-    ax[1].plot(
-        history["t"],
-        np.array(history["est_err"]) * 384400 * 1000,
-        label="Estimation Error (m)",
-        color="orange",
-    )
-    ax[1].set_title("Navigation Performance (EKF)")
-    ax[1].set_ylabel("Error (m)")
-    ax[1].legend()
-
-    ax[2].plot(history["t"], history["control"], label="Control Effort", color="green")
-    ax[2].set_title("Control Usage")
-    ax[2].set_ylabel("Acceleration")
-    ax[2].set_xlabel("Time")
-
-    plt.tight_layout()
-    plt.savefig("results/formation/gnc_performance.png")
-    print("Saved plot to results/formation/gnc_performance.png")
+    result = run_gnc_simulation(config)
+    destination = save_gnc_result(result, output_dir, plot=plot)
+    print(f"GNC simulation completed. Results: {destination}")
+    return result
 
 
 if __name__ == "__main__":

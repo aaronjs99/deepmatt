@@ -1,11 +1,11 @@
 """SDRE (State-Dependent Riccati Equation) controller implementation."""
 
 import numpy as np
-from scipy.linalg import solve_continuous_are
-from typing import Callable
+from deepmatt.gnc.control.lqr import lqr_gain
 
 from deepmatt.gnc.control.base_controller import Controller
 from deepmatt.dynamics.cr3bp import linearized_dynamics
+from deepmatt.core.system import CR3BPSystem, EARTH_MOON_SYSTEM
 
 
 class SDREController(Controller):
@@ -19,13 +19,14 @@ class SDREController(Controller):
         R: Control weighting matrix (3x3)
     """
 
-    def __init__(self, Q: np.ndarray = None, R: np.ndarray = None):
+    def __init__(self, Q: np.ndarray = None, R: np.ndarray = None, *, system: CR3BPSystem = EARTH_MOON_SYSTEM):
         """Initialize SDRE controller with weighting matrices.
 
         Args:
             Q: State cost matrix. Defaults to diag([1e4, 1e4, 1e4, 1e2, 1e2, 1e2])
             R: Control cost matrix. Defaults to 0.1 * I_3
         """
+        self.system = system
         self.Q = Q if Q is not None else np.diag([1e4, 1e4, 1e4, 1e2, 1e2, 1e2])
         self.R = R if R is not None else np.eye(3) * 1e-1
 
@@ -40,14 +41,11 @@ class SDREController(Controller):
             Control vector u (3,)
         """
         # Linearize dynamics around current state
-        A = linearized_dynamics(state)
-        B = np.zeros((6, 3))
-        B[3:, :] = np.eye(3)  # Control acts on acceleration
+        A = linearized_dynamics(state, system=self.system)
 
         try:
             # Solve continuous-time algebraic Riccati equation
-            P = solve_continuous_are(A, B, self.Q, self.R)
-            K = np.linalg.inv(self.R) @ B.T @ P
+            K = lqr_gain(A, self.Q, self.R)
             u = -K @ state
             return u
         except Exception:

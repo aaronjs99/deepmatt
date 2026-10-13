@@ -9,8 +9,16 @@
 # *                                                         *
 # ***********************************************************/
 
-# Physical constants
-mu = 0.01215058560962404  # Mass parameter for Earth-Moon system (dimensionless)
+"""Legacy Earth--Moon constants.
+
+New code should accept a :class:`deepmatt.core.system.CR3BPSystem` explicitly.
+These aliases remain for existing notebooks and analysis scripts.
+"""
+
+from deepmatt.core.system import EARTH_MOON_SYSTEM
+
+# Legacy aliases for existing scripts.
+mu = EARTH_MOON_SYSTEM.mass_parameter
 
 # Initial State for L1 Halo Orbit (Reference)
 L1_HALO_INITIAL_STATE = [
@@ -23,9 +31,9 @@ L1_HALO_INITIAL_STATE = [
 ]
 
 # Celestial Body Positions (Dimensionless)
-EARTH_POS = [-mu, 0, 0]
-MOON_POS = [1 - mu, 0, 0]
+EARTH_POS = list(EARTH_MOON_SYSTEM.primary_position)
+MOON_POS = list(EARTH_MOON_SYSTEM.secondary_position)
 
 # Characteristic Quantities
-L_star = 384400.0  # Characteristic length (km)
-T_star = 375200.0  # Characteristic time (s)
+L_star = EARTH_MOON_SYSTEM.length_scale_km  # Characteristic length (km)
+T_star = EARTH_MOON_SYSTEM.time_scale_s  # Characteristic time (s)

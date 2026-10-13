@@ -15,16 +15,33 @@ authors = [
 dependencies = [
     "numpy",
     "scipy",
-    "gekko",
     "sympy",
-    "pandas",
     "pyyaml",
     "matplotlib"
 ]
 
+[project.scripts]
+deepmatt = "deepmatt.cli:main"
+
 [project.optional-dependencies]
-dev = [
+development = [
     "pytest",
-    "flake8",
-    "black",
+    "ruff",
 ]
+optimization = [
+    "gekko",
+]
+reporting = [
+    "pandas",
+]
+learning = [
+    "gymnasium",
+    "stable-baselines3",
+    "torch",
+]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

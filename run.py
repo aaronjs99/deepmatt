@@ -21,6 +21,15 @@ Example:
     python run.py --mode generate_results
 """
 
+from pathlib import Path
+import sys
+
+
+# Allow the documented launcher to work directly from a source checkout.
+SOURCE_ROOT = Path(__file__).resolve().parent / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
 from deepmatt.cli import main
 
 if __name__ == "__main__":

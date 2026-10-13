@@ -26,7 +26,7 @@ scenarios, including:
 from deepmatt.core.params import mu, L1_HALO_INITIAL_STATE
 from deepmatt.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics
 
-from scipy.linalg import solve_continuous_are
+from deepmatt.gnc.control.lqr import lqr_gain
 from deepmatt.dynamics.cr3bp import linearized_dynamics
 
 
@@ -100,13 +100,10 @@ def formation_flight():
         # u = -K * (xd - xc)
         # Linearize around Chief
         A = linearized_dynamics(xc)
-        B = np.zeros((6, 3))
-        B[3:, :] = np.eye(3)
 
         # Solve ARE for K
         # A.T P + P A - P B R^-1 B.T P + Q = 0
-        P = solve_continuous_are(A, B, Q, R)
-        K = np.linalg.inv(R) @ B.T @ P
+        K = lqr_gain(A, Q, R)
 
         error = xd - xc
         u = -K @ error

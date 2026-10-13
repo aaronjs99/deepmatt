@@ -1,0 +1,3 @@
+include run.py
+include config/gnc.yaml
+recursive-include tests *.py

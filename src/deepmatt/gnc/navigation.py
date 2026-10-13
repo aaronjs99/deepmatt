@@ -23,46 +23,51 @@ Reference:
 """
 
 import numpy as np
+from scipy.linalg import expm
 from deepmatt.dynamics.cr3bp import linearized_dynamics
+from deepmatt.core.system import CR3BPSystem, EARTH_MOON_SYSTEM
+from deepmatt.gnc.control.lqr import acceleration_input_matrix
 
 
 class EKF:
-    def __init__(self, x0, P0, Q, R):
+    def __init__(self, x0, P0, Q, R, *, system: CR3BPSystem = EARTH_MOON_SYSTEM):
         """
         Extended Kalman Filter for Relative Navigation.
         State: Relative Position and Velocity (6x1)
         """
-        self.x = x0  # Estimate
-        self.P = P0  # Covariance
-        self.Q = Q  # Process Noise Covariance
-        self.R = R  # Measurement Noise Covariance
+        self.system = system
+        self.x = np.array(x0, dtype=float, copy=True)
+        self.P = np.array(P0, dtype=float, copy=True)
+        self.Q = np.array(Q, dtype=float, copy=True)
+        self.R = np.array(R, dtype=float, copy=True)
+        for name, shape in (("x", (6,)), ("P", (6, 6)), ("Q", (6, 6)), ("R", (3, 3))):
+            value = getattr(self, name)
+            if value.shape != shape or not np.all(np.isfinite(value)):
+                raise ValueError(f"{name} must be a finite array of shape {shape}.")
 
     def predict(self, u, dt, chief_state):
         """
         Propagate state and covariance.
         Model: x_k+1 = Phi * x_k + B * u
         """
-        # Linearize dynamics around Chief (or current estimate + Chief)
-        # For relative motion, A is evaluated at Chief's state
-        A = linearized_dynamics(chief_state)
-
-        # Discretize (First order Euler for covariance, or expm)
-        # Phi = I + A*dt
-        Phi = np.eye(6) + A * dt
-
-        # Propagate State (Linearized relative dynamics)
-        # dx_dot = A * dx + B * u
-        # x_new = x + (A*x + B*u)*dt
-        # B matrix maps control (accel) to state derivative
-        B = np.zeros((6, 3))
-        B[3:, :] = np.eye(3)
-
-        dx = A @ self.x + B @ u
-        self.x = self.x + dx * dt
-
-        # Propagate Covariance
-        # P = Phi * P * Phi.T + Q
+        if not np.isfinite(dt) or dt <= 0:
+            raise ValueError("Navigation time step must be finite and positive.")
+        u = np.asarray(u, dtype=float)
+        if u.shape != (3,) or not np.all(np.isfinite(u)):
+            raise ValueError(
+                "Navigation control must contain three finite accelerations."
+            )
+        A = linearized_dynamics(chief_state, system=self.system)
+        # Exact zero-order-hold discretization of the frozen local model.
+        augmented = np.zeros((9, 9))
+        augmented[:6, :6] = A
+        augmented[:6, 6:] = acceleration_input_matrix()
+        transition = expm(augmented * dt)
+        Phi = transition[:6, :6]
+        self.x = Phi @ self.x + transition[:6, 6:] @ u
+        # Q retains the existing contract: covariance added per predict call.
         self.P = Phi @ self.P @ Phi.T + self.Q
+        self.P = (self.P + self.P.T) * 0.5
 
     def update(self, z):
         """
@@ -71,6 +76,11 @@ class EKF:
         Let's assume we measure [x, y, z] directly with noise.
         H = [I 0]
         """
+        z = np.asarray(z, dtype=float)
+        if z.shape != (3,) or not np.all(np.isfinite(z)):
+            raise ValueError(
+                "Navigation measurement must contain three finite positions."
+            )
         H = np.zeros((3, 6))
         H[:3, :3] = np.eye(3)
 
@@ -81,13 +91,14 @@ class EKF:
         S = H @ self.P @ H.T + self.R
 
         # Kalman Gain
-        K = self.P @ H.T @ np.linalg.inv(S)
+        K = np.linalg.solve(S, H @ self.P).T
 
         # Update State
         self.x = self.x + K @ y
 
         # Update Covariance
-        I = np.eye(6)
-        self.P = (I - K @ H) @ self.P
+        residual = np.eye(6) - K @ H
+        self.P = residual @ self.P @ residual.T + K @ self.R @ K.T
+        self.P = (self.P + self.P.T) * 0.5
 
         return self.x

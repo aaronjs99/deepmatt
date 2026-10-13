@@ -13,11 +13,12 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.linalg import eig
 
-from deepmatt.core.params import mu, L1_HALO_INITIAL_STATE
+from deepmatt.core.params import L1_HALO_INITIAL_STATE
+from deepmatt.core.system import CR3BPSystem, EARTH_MOON_SYSTEM
 from deepmatt.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, linearized_dynamics
 
 
-def compute_stm(t_span, x0):
+def compute_stm(t_span, x0, *, system: CR3BPSystem = EARTH_MOON_SYSTEM):
     """
     Compute the State Transition Matrix (STM) Phi(t, t0) along a reference trajectory.
     """
@@ -29,8 +30,8 @@ def compute_stm(t_span, x0):
         x = y[:6]
         phi = y[6:].reshape((6, 6))
 
-        dx = halo_dynamics(t, x)
-        A = linearized_dynamics(x)
+        dx = halo_dynamics(t, x, system=system)
+        A = linearized_dynamics(x, system=system)
         dphi = A @ phi
 
         return np.concatenate([dx, dphi.flatten()])
@@ -41,13 +42,13 @@ def compute_stm(t_span, x0):
     return phi_final
 
 
-def find_natural_formation(chief_initial, period):
+def find_natural_formation(chief_initial, period, *, system: CR3BPSystem = EARTH_MOON_SYSTEM):
     """
     Find initial relative states that result in bounded/periodic relative motion.
     These correspond to the center subspace or unity eigenvalues of the Monodromy matrix.
     """
     print("Computing Monodromy Matrix...")
-    monodromy = compute_stm((0, period), chief_initial)
+    monodromy = compute_stm((0, period), chief_initial, system=system)
 
     vals, vecs = eig(monodromy)
 

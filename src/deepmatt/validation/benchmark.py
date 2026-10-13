@@ -12,7 +12,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from scipy.linalg import solve_continuous_are
+from deepmatt.gnc.control.lqr import lqr_gain
 
 from deepmatt.core.params import mu, L1_HALO_INITIAL_STATE
 from deepmatt.dynamics.cr3bp import cr3bp_dynamics as halo_dynamics, linearized_dynamics
@@ -50,11 +50,8 @@ def run_controller_benchmark(controller_type="lqr"):
 
         def get_lqr_gain(x):
             A = linearized_dynamics(x)
-            B = np.zeros((6, 3))
-            B[3:, :] = np.eye(3)
             try:
-                P = solve_continuous_are(A, B, Q_lqr, R_lqr)
-                K = np.linalg.inv(R_lqr) @ B.T @ P
+                K = lqr_gain(A, Q_lqr, R_lqr)
                 return K
             except:
                 return np.zeros((3, 6))
